@@ -1,5 +1,6 @@
 "use client";
 
+import EmployeeHistoryModal from "@/components/Dashboard/EmployeeHistoryModal";
 import { useLMS } from "@/context/LMSContext";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
@@ -13,6 +14,7 @@ export default function LeaveRequestDetails({
     useLMS();
   const router = useRouter();
   const [remarks, setRemarks] = useState("");
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const { id } = use(params);
   const request = leaves.find((l) => l.id === id);
@@ -111,9 +113,17 @@ export default function LeaveRequestDetails({
 
           <div className="space-y-6">
             <div>
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
-                Employee Stats
-              </h3>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  Employee Stats
+                </h3>
+                <button
+                  onClick={() => setIsHistoryOpen(true)}
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                >
+                  View History
+                </button>
+              </div>
               <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-indigo-800">Total Quota</span>
@@ -227,6 +237,13 @@ export default function LeaveRequestDetails({
           </button>
         </div>
       </div>
+
+      <EmployeeHistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        userId={request.userId}
+        employeeName={requester?.name || "Employee"}
+      />
     </div>
   );
 }
