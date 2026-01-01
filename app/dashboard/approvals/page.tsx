@@ -1,0 +1,227 @@
+"use client";
+
+import { useLMS } from "@/context/LMSContext";
+import Link from "next/link";
+import { useState } from "react";
+
+export default function ApprovalsPage() {
+  const { currentUser, getPendingApprovals, getApprovalHistory, users } =
+    useLMS();
+  const [activeTab, setActiveTab] = useState<"Pending" | "History">("Pending");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  if (!currentUser) return null;
+
+  // Helper: Get user name
+  const getUserName = (userId: string) =>
+    users.find((u) => u.id === userId)?.name || "Unknown User";
+
+  // Helper to colorize status
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Approved":
+        return "bg-green-100 text-green-800";
+      case "Rejected":
+        return "bg-red-100 text-red-800";
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  // Data Source
+  let data = [];
+  if (activeTab === "Pending") {
+    data = getPendingApprovals(currentUser.id);
+  } else {
+    data = getApprovalHistory(currentUser.id).sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  // Pagination Logic
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentItems = data.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleTabChange = (tab: "Pending" | "History") => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Approvals</h1>
+
+      {/* Tabs */}
+      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit mb-6">
+        <button
+          onClick={() => handleTabChange("Pending")}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+            activeTab === "Pending"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          Pending Requests
+          {activeTab !== "Pending" && (
+            <span className="ml-2 bg-gray-200 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">
+              {getPendingApprovals(currentUser.id).length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => handleTabChange("History")}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+            activeTab === "History"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          History
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-50 text-gray-500 font-medium">
+              <tr>
+                <th className="px-6 py-3">Applicant</th>
+                <th className="px-6 py-3">Type</th>
+                {activeTab === "Pending" ? (
+                  <>
+                    <th className="px-6 py-3">Duration</th>
+                    <th className="px-6 py-3">Dates</th>
+                  </>
+                ) : (
+                  <>
+                    <th className="px-6 py-3">Decided On</th>
+                    <th className="px-6 py-3">My Decision</th>
+                  </>
+                )}
+                <th className="px-6 py-3">
+                  {activeTab === "Pending" ? "Action" : "Final Status"}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {currentItems.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-8 text-center text-gray-400"
+                  >
+                    No {activeTab.toLowerCase()} requests found.
+                  </td>
+                </tr>
+              ) : (
+                currentItems.map((request) => {
+                  if (activeTab === "Pending") {
+                    return (
+                      <tr
+                        key={request.id}
+                        className="hover:bg-gray-50/50 transition-colors"
+                      >
+                        <td className="px-6 py-4 font-semibold text-gray-900">
+                          {getUserName(request.userId)}
+                        </td>
+                        <td className="px-6 py-4">{request.type}</td>
+                        <td className="px-6 py-4">
+                          {request.daysCalculated}{" "}
+                          {request.type === "Short" ? "Hrs" : "Days"}
+                        </td>
+                        <td className="px-6 py-4 text-gray-500">
+                          {request.startDate}
+                        </td>
+                        <td className="px-6 py-4">
+                          <Link
+                            href={`/dashboard/requests/${request.id}`}
+                            className="text-indigo-600 hover:text-indigo-800 font-semibold text-xs border border-indigo-200 px-3 py-1.5 rounded transition-colors"
+                          >
+                            Review
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  } else {
+                    const myAction = request.approvalChain.find(
+                      (chain) => chain.approverId === currentUser.id
+                    );
+                    return (
+                      <tr
+                        key={request.id}
+                        className="hover:bg-gray-50/50 transition-colors"
+                      >
+                        <td className="px-6 py-4 font-semibold text-gray-900">
+                          {getUserName(request.userId)}
+                        </td>
+                        <td className="px-6 py-4">{request.type}</td>
+                        <td className="px-6 py-4 text-gray-500">
+                          {new Date(myAction?.date || "").toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span
+                              className={`font-medium ${
+                                myAction?.status === "Approved"
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {myAction?.status}
+                            </span>
+                            {myAction?.remarks && (
+                              <span className="text-xs text-gray-400 italic">
+                                &quot;{myAction.remarks}&quot;
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
+                              request.status
+                            )}`}
+                          >
+                            {request.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  }
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

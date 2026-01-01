@@ -51,12 +51,22 @@ export default function Sidebar() {
           Dashboard
         </Link>
         <Link
-          href="/dashboard/apply"
+          href="/dashboard/approvals"
           className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            pathname === "/dashboard/apply" ? activeClass : inactiveClass
+            pathname === "/dashboard/approvals" ? activeClass : inactiveClass
           }`}
         >
-          Apply for Leave
+          Approvals
+        </Link>
+        <Link
+          href="/dashboard/my-applications"
+          className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            pathname === "/dashboard/my-applications"
+              ? activeClass
+              : inactiveClass
+          }`}
+        >
+          My Applications
         </Link>
       </nav>
 

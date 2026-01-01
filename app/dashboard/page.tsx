@@ -1,8 +1,10 @@
 "use client";
 
+import ApplyLeaveModal from "@/components/Dashboard/ApplyLeaveModal";
 import StatCard from "@/components/Dashboard/StatCard";
 import { useLMS } from "@/context/LMSContext";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function Dashboard() {
   const {
@@ -11,9 +13,10 @@ export default function Dashboard() {
     leaves,
     cancelLeave,
     getPendingApprovals,
-    getApprovalHistory,
     users,
   } = useLMS();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!currentUser) return null;
 
@@ -24,10 +27,11 @@ export default function Dashboard() {
     .sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    )
+    .slice(0, 5);
 
   // Approver Data
-  const pendingApprovals = getPendingApprovals(currentUser.id);
+  const pendingApprovals = getPendingApprovals(currentUser.id).slice(0, 5);
 
   // Helper: Get user name
   const getUserName = (userId: string) =>
@@ -47,11 +51,6 @@ export default function Dashboard() {
     }
   };
 
-  // Approval History Data
-  const approvalHistory = getApprovalHistory(currentUser.id).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
   return (
     <div>
       <div className="mb-8 flex justify-between items-end">
@@ -59,12 +58,12 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-500">Welcome back, {currentUser.name}</p>
         </div>
-        <Link
-          href="/dashboard/apply"
+        <button
+          onClick={() => setIsModalOpen(true)}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
         >
           + New Leave Application
-        </Link>
+        </button>
       </div>
 
       {/* Stats Row */}
@@ -89,13 +88,21 @@ export default function Dashboard() {
       {/* APPROVALS SECTION (Only if there are pending requests) */}
       {pendingApprovals.length > 0 && (
         <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <h3 className="text-lg font-bold text-gray-900">
-              Pending Approvals
-            </h3>
-            <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full">
-              Action Required
-            </span>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center space-x-3">
+              <h3 className="text-lg font-bold text-gray-900">
+                Pending Approvals
+              </h3>
+              <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full">
+                Action Required
+              </span>
+            </div>
+            <Link
+              href="/dashboard/approvals"
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+            >
+              View All
+            </Link>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden border-l-4 border-l-indigo-500">
             <div className="overflow-x-auto">
@@ -143,84 +150,18 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* APPROVAL HISTORY */}
-      {approvalHistory.length > 0 && (
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <h3 className="text-lg font-bold text-gray-900">
-              My Approval History
-            </h3>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-gray-500 font-medium">
-                  <tr>
-                    <th className="px-6 py-3">Applicant</th>
-                    <th className="px-6 py-3">Type</th>
-                    <th className="px-6 py-3">Date</th>
-                    <th className="px-6 py-3">My Decision</th>
-                    <th className="px-6 py-3">Current Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {approvalHistory.map((request) => {
-                    const myAction = request.approvalChain.find(
-                      (chain) => chain.approverId === currentUser.id
-                    );
-                    return (
-                      <tr
-                        key={request.id}
-                        className="hover:bg-gray-50/50 transition-colors"
-                      >
-                        <td className="px-6 py-4 font-semibold text-gray-900">
-                          {getUserName(request.userId)}
-                        </td>
-                        <td className="px-6 py-4">{request.type}</td>
-                        <td className="px-6 py-4 text-gray-500">
-                          {new Date(myAction?.date || "").toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span
-                              className={`font-medium ${
-                                myAction?.status === "Approved"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              {myAction?.status}
-                            </span>
-                            {myAction?.remarks && (
-                              <span className="text-xs text-gray-400 italic">
-                                &quot;{myAction.remarks}&quot;
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-                              request.status
-                            )}`}
-                          >
-                            {request.status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* APPROVAL HISTORY - Moved to dedicated page */}
 
       {/* MY APPLICATIONS */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
           <h3 className="font-semibold text-gray-900">My Applications</h3>
+          <Link
+            href="/dashboard/my-applications"
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+          >
+            View All
+          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -292,6 +233,11 @@ export default function Dashboard() {
           </table>
         </div>
       </div>
+
+      <ApplyLeaveModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }
