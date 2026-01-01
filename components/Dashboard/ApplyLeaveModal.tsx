@@ -2,21 +2,18 @@
 
 import { useLMS } from "@/context/LMSContext";
 import { LeaveNature, LeaveType } from "@/lib/types";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 interface ApplyLeaveModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function ApplyLeaveModal({
-  isOpen,
-  onClose,
-}: ApplyLeaveModalProps) {
-  const { currentUser, applyLeave } = useLMS();
+function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
+  const { currentUser, applyLeave, balances } = useLMS();
 
   const [type, setType] = useState<LeaveType>("Regular");
-  const [nature, setNature] = useState<LeaveNature | "">("");
+  const [nature, setNature] = useState<LeaveNature | "">("Casual");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
@@ -25,15 +22,51 @@ export default function ApplyLeaveModal({
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
 
-  const resetForm = () => {
-    setType("Regular");
-    setNature("");
-    setStartDate("");
-    setEndDate("");
-    setReason("");
-    setStartTime("");
-    setEndTime("");
-  };
+  // Derived State: Duration
+  const duration = useMemo(() => {
+    if (type === "Regular" && startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    } else if (type === "Short" && startTime && endTime) {
+      const [startH, startM] = startTime.split(":").map(Number);
+      const [endH, endM] = endTime.split(":").map(Number);
+      let diff = endH - startH + (endM - startM) / 60;
+      if (diff < 0) diff = 0;
+      return diff;
+    }
+    return 0;
+  }, [type, startDate, endDate, startTime, endTime]);
+
+  // Derived State: Warning
+  const warning = useMemo(() => {
+    if (
+      type === "Regular" &&
+      duration > 0 &&
+      currentUser &&
+      balances &&
+      nature
+    ) {
+      const myBalance = balances.find((b) => b.userId === currentUser.id);
+      if (myBalance) {
+        if (nature === "Sick") {
+          const remainingSick =
+            (myBalance.sickQuota || 10) - (myBalance.sickUsed || 0);
+          if (duration > remainingSick) {
+            return `Warning: You have ${remainingSick} Sick Leave days remaining. Applying for ${duration} days will exceed your quota.`;
+          }
+        } else if (nature === "Casual") {
+          const remainingCasual =
+            (myBalance.casualQuota || 10) - (myBalance.casualUsed || 0);
+          if (duration > remainingCasual) {
+            return `Warning: You have ${remainingCasual} Casual Leave days remaining. Applying for ${duration} days will exceed your quota.`;
+          }
+        }
+      }
+    }
+    return "";
+  }, [type, duration, currentUser, balances, nature]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,11 +89,8 @@ export default function ApplyLeaveModal({
       type === "Short" ? { start: startTime, end: endTime } : undefined
     );
 
-    resetForm();
     onClose();
   };
-
-  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -72,6 +102,7 @@ export default function ApplyLeaveModal({
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
+            type="button"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -243,6 +274,30 @@ export default function ApplyLeaveModal({
               />
             </div>
 
+            {/* Warning Message */}
+            {warning && (
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-5 w-5 text-yellow-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-700">{warning}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
               <button
                 type="button"
@@ -263,4 +318,12 @@ export default function ApplyLeaveModal({
       </div>
     </div>
   );
+}
+
+export default function ApplyLeaveModal({
+  isOpen,
+  onClose,
+}: ApplyLeaveModalProps) {
+  if (!isOpen) return null;
+  return <ApplyLeaveContent onClose={onClose} />;
 }

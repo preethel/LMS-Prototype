@@ -20,6 +20,11 @@ export interface LeaveBalance {
     pendingDays: number;
     totalHours: number; // For short leave
     usedHours: number;
+    // Split Quotas (Internal Separation)
+    sickQuota: number;
+    sickUsed: number;
+    casualQuota: number;
+    casualUsed: number;
 }
 
 export interface LeaveRequest {
