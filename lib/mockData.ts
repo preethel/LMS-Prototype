@@ -14,7 +14,7 @@ export const MOCK_USERS: User[] = [
     {
         id: 'u2',
         name: 'Sarah Lead',
-        email: 'sarah@company.com',
+        email: 'C',
         designation: 'Team Lead',
         approver: 'u3', // Reports to Manager
     },
