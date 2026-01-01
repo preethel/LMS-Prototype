@@ -3,14 +3,42 @@
 import { useLMS } from "@/context/LMSContext";
 import { User } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function LoginPage() {
   const { users, login } = useLMS();
   const router = useRouter();
+  const [view, setView] = useState<"quick" | "standard">("quick");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleLogin = (userId: string) => {
+  const handleQuickLogin = (userId: string) => {
     login(userId);
     router.push("/dashboard");
+  };
+
+  const handleStandardLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    // Demo Logic: Try to find user by email, otherwise default to first user (Admin usually)
+    // In a real app, this would verify password.
+    const user = users.find(
+      (u) => u.email.toLowerCase() === email.toLowerCase()
+    );
+
+    if (user) {
+      login(user.id);
+      router.push("/dashboard");
+    } else {
+      // Fallback for demo if email doesn't match specific user, just login as first user
+      // Or show error? User asked for a "demo", usually implies flexible.
+      // But let's be slightly strict to show it "works".
+      setError(
+        "User not found. Try 'john@corp.com' or check Quick Login list."
+      );
+    }
   };
 
   // Helper to get initials
@@ -25,7 +53,7 @@ export default function LoginPage() {
 
   const UserCard = ({ user }: { user: User }) => (
     <button
-      onClick={() => handleLogin(user.id)}
+      onClick={() => handleQuickLogin(user.id)}
       className="w-full text-left group relative bg-white p-4 rounded-xl border border-gray-200 hover:border-indigo-500 hover:shadow-md transition-all duration-200 flex items-center space-x-4"
     >
       <div className="h-12 w-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-700 font-bold text-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
@@ -64,7 +92,7 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1 className="text-5xl font-bold mb-6 leading-tight">
-            Leave Management <br /> Simplified.
+            HawarIT <br /> Leave Management System
           </h1>
           <p className="text-indigo-200 text-lg max-w-md">
             Experience a streamlined workflow for leave applications, recursive
@@ -73,7 +101,7 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10 text-sm text-indigo-300">
-          © 2024 Corporate Systems Inc. All rights reserved.
+          © 2025 HawarIT. All rights reserved.
         </div>
 
         {/* Abstract Background Shapes */}
@@ -88,48 +116,163 @@ export default function LoginPage() {
           <div className="text-center lg:text-left">
             <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
             <p className="mt-2 text-gray-600">
-              Select an account to login to the prototype.
+              {view === "quick"
+                ? "Select an account to login to the prototype."
+                : "Enter your credentials to access your account."}
             </p>
           </div>
 
-          <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-            {/* Approvers Group */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Management
-              </h3>
-              {users
-                .filter(
-                  (u) =>
-                    u.designation.includes("Director") ||
-                    u.designation.includes("Lead") ||
-                    u.designation.includes("Manager")
-                )
-                .map((user) => (
-                  <UserCard key={user.id} user={user} />
-                ))}
-            </div>
-
-            {/* Employees Group */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Employees
-              </h3>
-              {users
-                .filter(
-                  (u) =>
-                    !u.designation.includes("Director") &&
-                    !u.designation.includes("Lead") &&
-                    !u.designation.includes("Manager")
-                )
-                .map((user) => (
-                  <UserCard key={user.id} user={user} />
-                ))}
-            </div>
+          {/* Toggle View */}
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setView("quick")}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                view === "quick"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              Quick Demo Login
+            </button>
+            <button
+              onClick={() => setView("standard")}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                view === "standard"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              Standard Login
+            </button>
           </div>
 
+          {view === "quick" ? (
+            <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+              {/* Approvers Group */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Management
+                </h3>
+                {users
+                  .filter(
+                    (u) =>
+                      u.designation.includes("Director") ||
+                      u.designation.includes("Lead") ||
+                      u.designation.includes("Manager")
+                  )
+                  .map((user) => (
+                    <UserCard key={user.id} user={user} />
+                  ))}
+              </div>
+
+              {/* Employees Group */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Employees
+                </h3>
+                {users
+                  .filter(
+                    (u) =>
+                      !u.designation.includes("Director") &&
+                      !u.designation.includes("Lead") &&
+                      !u.designation.includes("Manager")
+                  )
+                  .map((user) => (
+                    <UserCard key={user.id} user={user} />
+                  ))}
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleStandardLogin} className="space-y-6">
+              {error && (
+                <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Email Address / Username
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="you@company.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Password
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                  <label
+                    htmlFor="remember-me"
+                    className="ml-2 block text-sm text-gray-900"
+                  >
+                    Remember me
+                  </label>
+                </div>
+
+                <div className="text-sm">
+                  <a
+                    href="#"
+                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                  >
+                    Forgot your password?
+                  </a>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  Sign in
+                </button>
+              </div>
+            </form>
+          )}
+
           <div className="pt-6 border-t border-gray-100 text-center text-xs text-gray-400">
-            Prototype Version 1.0.2 • No password required
+            Prototype Version 1.0.3 •{" "}
+            {view === "quick" ? "No password required" : "Secure Login Demo"}
           </div>
         </div>
       </div>
