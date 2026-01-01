@@ -69,19 +69,29 @@ export default function Dashboard() {
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatCard
-          title="Annual Quota"
-          value={myBalance?.totalDays || 0}
-          subtext="Days / Year"
+          title="Total Quota"
+          value={myBalance ? `${myBalance.totalDays} Days` : "0"}
+          subtext="Annual Allocation"
         />
         <StatCard
           title="Remaining"
-          value={myBalance ? myBalance.totalDays - myBalance.usedDays : 0}
-          subtext="Days Available"
+          value={
+            myBalance
+              ? `${myBalance.totalDays - myBalance.usedDays} Days ${
+                  myBalance.totalHours - (myBalance.usedHours || 0)
+                } Hrs`
+              : "0"
+          }
+          subtext="Available Balance"
         />
         <StatCard
           title="Used"
-          value={myBalance?.usedDays || 0}
-          subtext="Days Taken"
+          value={
+            myBalance
+              ? `${myBalance.usedDays} Days ${myBalance.usedHours || 0} Hrs`
+              : "0"
+          }
+          subtext="Consumed to Date"
         />
       </div>
 

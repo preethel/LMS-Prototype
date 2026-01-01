@@ -79,16 +79,29 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     // Requirement: "Short Leave is always calculated in hours"
     // Requirement: "1 day = 8 hours"
 
-    // Simplified Balance Deduction Logic
-    // const daysToDeduct = days;
-    // const hoursToDeduct = 0;
-
-    if (type === "Short") {
-      // daysToDeduct = 0;
-      // Mock calculation: 2 hours
-      // In a real app we'd parse timeRange
-      // hoursToDeduct = 2;
+    // Calculate duration
+    let quantity = 0;
+    if (type === "Short" && timeRange) {
+      const [startH, startM] = timeRange.start.split(":").map(Number);
+      const [endH, endM] = timeRange.end.split(":").map(Number);
+      quantity = endH - startH + (endM - startM) / 60; // Hours
+    } else {
+      quantity = days; // Days
     }
+
+    // Immediate Balance Deduction
+    setBalances((prevBal) =>
+      prevBal.map((b) => {
+        if (b.userId === userId) {
+          if (type === "Short") {
+            return { ...b, usedHours: (b.usedHours || 0) + quantity };
+          } else {
+            return { ...b, usedDays: (b.usedDays || 0) + quantity };
+          }
+        }
+        return b;
+      })
+    );
 
     const newLeave: LeaveRequest = {
       id: `l${Date.now()}`,
@@ -102,15 +115,12 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
       currentApproverId: user.approver, // First stop: Direct Approver
       approvalChain: [],
       createdAt: new Date().toISOString(),
-      daysCalculated: days,
+      daysCalculated: quantity,
+      startTime: timeRange?.start,
+      endTime: timeRange?.end,
     };
 
     setLeaves((prev) => [newLeave, ...prev]);
-
-    // Optimistic balance update? No, update on approval usually.
-    // Requirement: "Cancel an already approved leave... balance restored" -> implies balance deducts on approval?
-    // usually systems deduct 'pending' balance immediately to prevent overbooking.
-    // Let's deduct from 'pending' quota.
   };
 
   const approveLeave = (
@@ -147,20 +157,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
           };
         } else {
           // Final Approval
-          // Deduct Balance Here (Actually Confirm Deduction)
-
-          // Find user balance and update
-          setBalances((prevBal) =>
-            prevBal.map((b) => {
-              if (b.userId === submittedUserId) {
-                return {
-                  ...b,
-                  usedDays: b.usedDays + leave.daysCalculated, // Simplified
-                };
-              }
-              return b;
-            })
-          );
+          // Balance was already deducted at application time.
 
           return {
             ...leave,
@@ -178,6 +175,31 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     approverId: string,
     remarks?: string
   ) => {
+    // Restore Balance
+    const leave = leaves.find((l) => l.id === leaveId);
+    if (leave) {
+      setBalances((prevBal) =>
+        prevBal.map((b) => {
+          if (b.userId === leave.userId) {
+            if (leave.type === "Short") {
+              return {
+                ...b,
+                usedHours: Math.max(
+                  0,
+                  (b.usedHours || 0) - leave.daysCalculated
+                ),
+              };
+            } else {
+              return {
+                ...b,
+                usedDays: Math.max(0, (b.usedDays || 0) - leave.daysCalculated),
+              };
+            }
+          }
+          return b;
+        })
+      );
+    }
     setLeaves((prev) =>
       prev.map((leave) => {
         if (leave.id !== leaveId) return leave;
@@ -200,7 +222,32 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const cancelLeave = (leaveId: string) => {
-    // Restore balance if it was approved
+    // Restore balance
+    const leave = leaves.find((l) => l.id === leaveId);
+    if (leave) {
+      setBalances((prevBal) =>
+        prevBal.map((b) => {
+          if (b.userId === leave.userId) {
+            if (leave.type === "Short") {
+              return {
+                ...b,
+                usedHours: Math.max(
+                  0,
+                  (b.usedHours || 0) - leave.daysCalculated
+                ),
+              };
+            } else {
+              return {
+                ...b,
+                usedDays: Math.max(0, (b.usedDays || 0) - leave.daysCalculated),
+              };
+            }
+          }
+          return b;
+        })
+      );
+    }
+
     // Update status
     setLeaves((prev) =>
       prev.map((l) => (l.id === leaveId ? { ...l, status: "Cancelled" } : l))
