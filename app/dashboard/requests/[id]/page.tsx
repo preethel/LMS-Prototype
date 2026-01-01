@@ -139,27 +139,63 @@ export default function LeaveRequestDetails({
               </div>
             </div>
 
-            {request.approvalChain.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
-                  Approval Chain
-                </h3>
-                <div className="space-y-2">
-                  {request.approvalChain.map((step, idx) => (
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
+                Approval Hierarchy
+              </h3>
+              <div className="space-y-4">
+                {/* Application Event */}
+                <div className="flex items-start text-xs text-gray-500">
+                  <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 mr-3 flex-shrink-0"></div>
+                  <div>
+                    <span className="font-semibold text-gray-700 block text-sm">
+                      Applied by {requester?.name}
+                    </span>
+                    <span>
+                      {new Date(request.createdAt).toLocaleDateString()} at{" "}
+                      {new Date(request.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Approval Steps */}
+                {request.approvalChain.map((step, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start text-xs text-gray-500"
+                  >
                     <div
-                      key={idx}
-                      className="flex items-center text-xs text-gray-500"
-                    >
-                      <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
-                      <span>
-                        Approved by{" "}
+                      className={`h-2 w-2 rounded-full mt-1.5 mr-3 flex-shrink-0 ${
+                        step.status === "Approved"
+                          ? "bg-green-500"
+                          : "bg-red-500"
+                      }`}
+                    ></div>
+                    <div>
+                      <span className="font-semibold text-gray-700 block text-sm">
+                        {step.status} by{" "}
                         {users.find((u) => u.id === step.approverId)?.name}
                       </span>
+                      <span>
+                        {new Date(step.date).toLocaleDateString()} at{" "}
+                        {new Date(step.date).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      {step.remarks && (
+                        <p className="mt-1 italic text-gray-400">
+                          &quot;{step.remarks}&quot;
+                        </p>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
         </div>
 

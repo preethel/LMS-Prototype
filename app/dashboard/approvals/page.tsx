@@ -91,6 +91,7 @@ export default function ApprovalsPage() {
             <thead className="bg-gray-50 text-gray-500 font-medium">
               <tr>
                 <th className="px-6 py-3">Applicant</th>
+                <th className="px-6 py-3">Last Approver</th>
                 <th className="px-6 py-3">Type</th>
                 {activeTab === "Pending" ? (
                   <>
@@ -99,6 +100,7 @@ export default function ApprovalsPage() {
                   </>
                 ) : (
                   <>
+                    <th className="px-6 py-3">Last Approver</th>
                     <th className="px-6 py-3">Decided On</th>
                     <th className="px-6 py-3">My Decision</th>
                   </>
@@ -128,6 +130,15 @@ export default function ApprovalsPage() {
                       >
                         <td className="px-6 py-4 font-semibold text-gray-900">
                           {getUserName(request.userId)}
+                        </td>
+                        <td className="px-6 py-4 text-gray-600 font-medium">
+                          {request.approvalChain.length > 0
+                            ? getUserName(
+                                request.approvalChain[
+                                  request.approvalChain.length - 1
+                                ].approverId
+                              )
+                            : "Direct"}
                         </td>
                         <td className="px-6 py-4">{request.type}</td>
                         <td className="px-6 py-4">
@@ -159,6 +170,8 @@ export default function ApprovalsPage() {
                         <td className="px-6 py-4 font-semibold text-gray-900">
                           {getUserName(request.userId)}
                         </td>
+                        {/* Skip Last Approver for History tab (maybe not needed or show Decided By Me?) */}
+                        <td className="px-6 py-4 text-gray-400">-</td>
                         <td className="px-6 py-4">{request.type}</td>
                         <td className="px-6 py-4 text-gray-500">
                           {new Date(myAction?.date || "").toLocaleDateString()}

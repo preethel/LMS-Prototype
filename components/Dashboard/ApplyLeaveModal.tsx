@@ -231,7 +231,7 @@ export default function ApplyLeaveModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description / Reason
+                Cause of Leave
               </label>
               <textarea
                 required

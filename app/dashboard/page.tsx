@@ -110,6 +110,7 @@ export default function Dashboard() {
                 <thead className="bg-indigo-50 text-indigo-900 font-medium">
                   <tr>
                     <th className="px-6 py-3">Applicant</th>
+                    <th className="px-6 py-3">Last Approver</th>
                     <th className="px-6 py-3">Type</th>
                     <th className="px-6 py-3">Duration</th>
                     <th className="px-6 py-3">Dates</th>
@@ -124,6 +125,15 @@ export default function Dashboard() {
                     >
                       <td className="px-6 py-4 font-semibold text-gray-900">
                         {getUserName(request.userId)}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 font-medium text-xs">
+                        {request.approvalChain.length > 0
+                          ? getUserName(
+                              request.approvalChain[
+                                request.approvalChain.length - 1
+                              ].approverId
+                            )
+                          : "Direct"}
                       </td>
                       <td className="px-6 py-4">{request.type}</td>
                       <td className="px-6 py-4">
