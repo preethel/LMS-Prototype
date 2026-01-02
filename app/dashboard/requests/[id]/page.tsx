@@ -10,8 +10,16 @@ export default function LeaveRequestDetails({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { leaves, users, balances, currentUser, approveLeave, rejectLeave } =
-    useLMS();
+  const {
+    leaves,
+    users,
+    balances,
+    currentUser,
+    approveLeave,
+    rejectLeave,
+    editApproval,
+    skipLeave,
+  } = useLMS();
   const router = useRouter();
   const [remarks, setRemarks] = useState("");
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -25,13 +33,30 @@ export default function LeaveRequestDetails({
   const requester = users.find((u) => u.id === request.userId);
   const requesterBalance = balances.find((b) => b.userId === request.userId);
 
+  const hasProcessed = request.approvalChain.find(
+    (s) => s.approverId === currentUser.id
+  );
+
   const handleApprove = () => {
-    approveLeave(request.userId, request.id, currentUser.id, remarks);
+    if (hasProcessed) {
+      editApproval(request.id, currentUser.id, "Approved", remarks);
+    } else {
+      approveLeave(request.userId, request.id, currentUser.id, remarks);
+    }
     router.push("/dashboard");
   };
 
   const handleReject = () => {
-    rejectLeave(request.id, currentUser.id, remarks);
+    if (hasProcessed) {
+      editApproval(request.id, currentUser.id, "Rejected", remarks);
+    } else {
+      rejectLeave(request.id, currentUser.id, remarks);
+    }
+    router.push("/dashboard");
+  };
+
+  const handleSkip = () => {
+    skipLeave(request.id, currentUser.id);
     router.push("/dashboard");
   };
 
@@ -181,7 +206,9 @@ export default function LeaveRequestDetails({
                       className={`h-2 w-2 rounded-full mt-1.5 mr-3 flex-shrink-0 ${
                         step.status === "Approved"
                           ? "bg-green-500"
-                          : "bg-red-500"
+                          : step.status === "Rejected"
+                          ? "bg-red-500"
+                          : "bg-gray-400"
                       }`}
                     ></div>
                     <div>
@@ -223,18 +250,64 @@ export default function LeaveRequestDetails({
         </div>
 
         <div className="p-8 pt-0 flex space-x-4">
-          <button
-            onClick={handleApprove}
-            className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-200 transform hover:-translate-y-0.5"
-          >
-            Approve Request
-          </button>
-          <button
-            onClick={handleReject}
-            className="flex-1 bg-white text-red-600 border border-red-200 py-3 rounded-xl font-bold hover:bg-red-50 transition-all"
-          >
-            Reject
-          </button>
+          {/* LOGIC: Check if already processed by current user */}
+          {hasProcessed ? (
+            <div className="w-full">
+              <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg flex justify-between items-center">
+                <span className="text-gray-700 font-medium">
+                  You have{" "}
+                  <span className="font-bold">{hasProcessed.status}</span> this
+                  request.
+                </span>
+              </div>
+              <div className="flex space-x-4">
+                {/* Logic: Allow switching to Approved or Rejected regardless of whether it was Skipped */}
+                <button
+                  onClick={handleApprove}
+                  className={`flex-1 py-3 rounded-xl font-bold transition-all shadow-lg transform hover:-translate-y-0.5 ${
+                    hasProcessed.status === "Approved"
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed" // Already Approved
+                      : "bg-green-600 text-white hover:bg-green-700 shadow-green-200"
+                  }`}
+                  disabled={hasProcessed.status === "Approved"}
+                >
+                  Change to Approved
+                </button>
+                <button
+                  onClick={handleReject}
+                  className={`flex-1 py-3 rounded-xl font-bold transition-all shadow-lg transform hover:-translate-y-0.5 ${
+                    hasProcessed.status === "Rejected"
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-red-600 border border-red-200 hover:bg-red-50"
+                  }`}
+                  disabled={hasProcessed.status === "Rejected"}
+                >
+                  Change to Rejected
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={handleApprove}
+                className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-200 transform hover:-translate-y-0.5"
+              >
+                Approve Request
+              </button>
+              <button
+                onClick={handleReject}
+                className="flex-1 bg-white text-red-600 border border-red-200 py-3 rounded-xl font-bold hover:bg-red-50 transition-all"
+              >
+                Reject
+              </button>
+              <button
+                onClick={handleSkip}
+                className="px-6 py-3 text-gray-500 font-medium hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
+              >
+                Skip (Delegate)
+              </button>
+            </>
+          )}
         </div>
       </div>
 

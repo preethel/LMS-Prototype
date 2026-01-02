@@ -1,7 +1,7 @@
 export type LeaveType = 'Regular' | 'Short';
 export type LeaveNature = 'Casual' | 'Sick' | 'Maternity' | 'Pilgrim' | 'Unpaid' | 'Other';
 
-export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Skipped';
 
 export interface User {
     id: string;
@@ -41,7 +41,7 @@ export interface LeaveRequest {
     currentApproverId?: string; // Who needs to approve this right now?
     approvalChain: {
         approverId: string;
-        status: 'Approved' | 'Rejected';
+        status: 'Approved' | 'Rejected' | 'Skipped';
         date: string;
         remarks?: string;
     }[];

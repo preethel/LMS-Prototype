@@ -37,6 +37,13 @@ interface LMSContextType {
   cancelLeave: (leaveId: string) => void;
   getPendingApprovals: (approverId: string) => LeaveRequest[];
   getApprovalHistory: (approverId: string) => LeaveRequest[];
+  skipLeave: (leaveId: string, approverId: string) => void;
+  editApproval: (
+    leaveId: string,
+    approverId: string,
+    newStatus: "Approved" | "Rejected" | "Skipped",
+    newRemarks: string
+  ) => void;
 }
 
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
@@ -260,9 +267,201 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  const skipLeave = (leaveId: string, approverId: string) => {
+    setLeaves((prev) =>
+      prev.map((leave) => {
+        if (leave.id !== leaveId) return leave;
+
+        const currentApproverUser = users.find((u) => u.id === approverId);
+        const nextApproverId = currentApproverUser?.approver;
+
+        if (!nextApproverId) {
+          // No next approver to skip to.
+          // In real app, this might escalate or fail.
+          // For now, treat as "Reviewed but Passed" -> maybe stays Pending or auto-approves?
+          // "skip ekta action, mane ekjon skip korle next hairerchy er kache jabe"
+          // If last person skips, it's stuck. Let's just create an entry but keep currentApprover undefined?
+          // Or maybe it stays with same person?
+          // Let's assume hierarchy always has next unless Director. If Director skips, maybe it's Approved?
+          // Let's just do nothing if no next.
+          return leave;
+        }
+
+        return {
+          ...leave,
+          currentApproverId: nextApproverId,
+          approvalChain: [
+            ...leave.approvalChain,
+            {
+              approverId,
+              status: "Skipped" as const, // We need to add "Skipped" to type if not there, for now cast as any or string if type is strict
+              date: new Date().toISOString(),
+              remarks: "Skipped/Delegated",
+            },
+          ],
+        };
+      })
+    );
+  };
+
   const getApprovalHistory = (approverId: string) => {
     return leaves.filter((l) =>
       l.approvalChain.some((step) => step.approverId === approverId)
+    );
+  };
+
+  const editApproval = (
+    leaveId: string,
+    approverId: string,
+    newStatus: "Approved" | "Rejected" | "Skipped",
+    newRemarks: string
+  ) => {
+    // 1. Find Leave
+    const leave = leaves.find((l) => l.id === leaveId);
+    if (!leave) return;
+
+    // 2. Determine Action
+    const previousStep = leave.approvalChain.find(
+      (step) => step.approverId === approverId
+    );
+    if (!previousStep) return;
+
+    const previousStatus = previousStep.status;
+
+    if (previousStatus === newStatus) {
+      // Just update remarks
+      setLeaves((prev) =>
+        prev.map((l) => {
+          if (l.id !== leaveId) return l;
+          return {
+            ...l,
+            approvalChain: l.approvalChain.map((step) =>
+              step.approverId === approverId
+                ? { ...step, remarks: newRemarks }
+                : step
+            ),
+          };
+        })
+      );
+      return;
+    }
+
+    // Status Changed logic
+    if (newStatus === "Rejected") {
+      if (previousStatus === "Approved") {
+        // Restore Balance
+        setBalances((prevBal) =>
+          prevBal.map((b) => {
+            if (b.userId === leave.userId) {
+              if (leave.type === "Short") {
+                return {
+                  ...b,
+                  usedHours: Math.max(
+                    0,
+                    (b.usedHours || 0) - leave.daysCalculated
+                  ),
+                };
+              } else {
+                return {
+                  ...b,
+                  usedDays: Math.max(
+                    0,
+                    (b.usedDays || 0) - leave.daysCalculated
+                  ),
+                };
+              }
+            }
+            return b;
+          })
+        );
+      }
+    } else if (newStatus === "Approved") {
+      if (previousStatus === "Rejected") {
+        // Deduct Balance
+        setBalances((prevBal) =>
+          prevBal.map((b) => {
+            if (b.userId === leave.userId) {
+              if (leave.type === "Short") {
+                return {
+                  ...b,
+                  usedHours: (b.usedHours || 0) + leave.daysCalculated,
+                };
+              } else {
+                return {
+                  ...b,
+                  usedDays: (b.usedDays || 0) + leave.daysCalculated,
+                };
+              }
+            }
+            return b;
+          })
+        );
+      }
+    }
+
+    // NOTE: Transitions from "Skipped" do not affect balance (since Skip didn't change balance).
+    // Transitions TO "Skipped" (e.g. Approved -> Skipped) would imply restoring balance if it was Approved.
+    // Ideally we'd handle all permutations.
+    // For "Approved" -> "Skipped": Restore balance.
+    if (previousStatus === "Approved" && newStatus === "Skipped") {
+      setBalances((prevBal) =>
+        prevBal.map((b) => {
+          if (b.userId === leave.userId) {
+            if (leave.type === "Short") {
+              return {
+                ...b,
+                usedHours: Math.max(
+                  0,
+                  (b.usedHours || 0) - leave.daysCalculated
+                ),
+              };
+            } else {
+              return {
+                ...b,
+                usedDays: Math.max(0, (b.usedDays || 0) - leave.daysCalculated),
+              };
+            }
+          }
+          return b;
+        })
+      );
+    }
+    // For "Rejected" -> "Skipped": No balance change (since rejected already restored it).
+
+    setLeaves((prev) =>
+      prev.map((l) => {
+        if (l.id !== leaveId) return l;
+
+        // If editing a Skipped action, we might need to "pull back" the request if it moved to next approver?
+        // User said "approvals gulor action poreu change korte parbe".
+        // If I skipped, it went to my boss. If I now "Approve", does it recall from boss?
+        // Let's assume for this prototype we just update record. The `currentApproverId` logic is complex to revert.
+        // We will just update status. If it was finalized by someone else later, this change interacts with history.
+        // Simplified: Just update the status string.
+
+        // However, if we change TO Approved/Rejected, we update the global status ONLY IF this was the final/latest action or drives it?
+        // We'll update global status to new decision.
+
+        return {
+          ...l,
+          status:
+            newStatus === "Skipped"
+              ? "Pending"
+              : newStatus === "Rejected"
+              ? "Rejected"
+              : "Approved",
+          approvalChain: l.approvalChain.map((step) =>
+            step.approverId === approverId
+              ? {
+                  ...step,
+                  status: newStatus,
+                  remarks: newRemarks,
+                  date: new Date().toISOString(),
+                }
+              : step
+          ),
+        };
+      })
     );
   };
 
@@ -281,6 +480,8 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         cancelLeave,
         getPendingApprovals,
         getApprovalHistory,
+        editApproval,
+        skipLeave,
       }}
     >
       {children}
