@@ -29,7 +29,9 @@ export default function LeaveRequestDetails({
   const request = leaves.find((l) => l.id === id);
 
   if (!request || !currentUser)
-    return <div className="p-8">Request not found</div>;
+    return (
+      <div className="p-12 text-center text-gray-500">Request not found</div>
+    );
 
   const requester = users.find((u) => u.id === request.userId);
   const requesterBalance = balances.find((b) => b.userId === request.userId);
@@ -38,6 +40,7 @@ export default function LeaveRequestDetails({
     (s) => s.approverId === currentUser.id
   );
 
+  // --- Actions ---
   const handleApprove = () => {
     if (hasProcessed) {
       editApproval(request.id, currentUser.id, "Approved", remarks);
@@ -61,186 +64,403 @@ export default function LeaveRequestDetails({
     router.push("/dashboard");
   };
 
-  return (
-    <div className="max-w-3xl mx-auto">
-      <button
-        onClick={() => router.back()}
-        className="mb-6 text-sm text-gray-500 hover:text-gray-900 flex items-center"
-      >
-        ← Back to Dashboard
-      </button>
+  // --- Timeline Logic ---
+  const getTimelineEvents = () => {
+    const events: {
+      title: string;
+      date?: string;
+      status:
+        | "Calculated"
+        | "Pending"
+        | "Upcoming"
+        | "Approved"
+        | "Rejected"
+        | "Skipped"
+        | "Applied";
+      actor?: string;
+      role?: string;
+      remarks?: string;
+      isConnector?: boolean;
+    }[] = [];
 
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="p-8 border-b border-gray-100 bg-gray-50/50">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Leave Request
-              </h1>
-              <p className="text-gray-500 mt-1">
-                Submitted by {requester?.name}
-              </p>
-            </div>
-            <div
-              className={`px-3 py-1 rounded-full text-sm font-bold ${
-                request.type === "Regular"
-                  ? "bg-purple-100 text-purple-800"
-                  : "bg-orange-100 text-orange-800"
-              }`}
+    // 1. Applied
+    events.push({
+      title: "Application Submitted",
+      date: request.createdAt,
+      status: "Applied",
+      actor: requester?.name,
+      role: requester?.designation,
+    });
+
+    // 2. Past Actions (Approval Chain)
+    request.approvalChain.forEach((step) => {
+      const actor = users.find((u) => u.id === step.approverId);
+      events.push({
+        title: `${step.status} by ${actor?.name}`,
+        date: step.date,
+        status: step.status,
+        actor: actor?.name,
+        role: actor?.designation,
+        remarks: step.remarks,
+      });
+    });
+
+    // 3. Current & Future (If still pending/active)
+    if (request.status === "Pending") {
+      let nextApproverId = request.currentApproverId;
+
+      // Safety break to prevent infinite loops in circular hierarchy
+      let depth = 0;
+      const maxDepth = 10;
+
+      while (nextApproverId && depth < maxDepth) {
+        const approver = users.find((u) => u.id === nextApproverId);
+        if (!approver) break;
+
+        events.push({
+          title: depth === 0 ? "Currently Pending" : "Up Next",
+          status: depth === 0 ? "Pending" : "Upcoming",
+          actor: approver.name,
+          role: approver.designation,
+        });
+
+        nextApproverId = approver.approver;
+        depth++;
+      }
+    } else if (request.status === "Approved") {
+      events.push({
+        title: "Request Finalized",
+        date: request.approvalChain[request.approvalChain.length - 1]?.date,
+        status: "Approved",
+        actor: "System",
+      });
+    } else if (request.status === "Rejected") {
+      events.push({
+        title: "Request Closed",
+        date: request.approvalChain[request.approvalChain.length - 1]?.date,
+        status: "Rejected",
+        actor: "System",
+      });
+    }
+
+    return events;
+  };
+
+  const timelineEvents = getTimelineEvents();
+
+  // --- Render Helpers ---
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Approved":
+        return "bg-green-100 text-green-700 border-green-200";
+      case "Rejected":
+        return "bg-red-100 text-red-700 border-red-200";
+      case "Pending":
+        return "bg-orange-100 text-orange-700 border-orange-200";
+      case "Skipped":
+        return "bg-gray-100 text-gray-700 border-gray-200";
+      case "Applied":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      default:
+        return "bg-gray-50 text-gray-500 border-gray-100";
+    }
+  };
+
+  const getTimelineIconColor = (status: string) => {
+    switch (status) {
+      case "Applied":
+        return "bg-blue-500";
+      case "Approved":
+        return "bg-green-500";
+      case "Rejected":
+        return "bg-red-500";
+      case "Skipped":
+        return "bg-gray-400";
+      case "Pending":
+        return "bg-orange-500 animate-pulse";
+      default:
+        return "bg-gray-200";
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto p-6">
+      {/* Header Section */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <button
+            onClick={() => router.back()}
+            className="mb-2 text-sm text-gray-400 hover:text-gray-900 transition-colors flex items-center gap-1"
+          >
+            ← Back to Dashboard
+          </button>
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold text-gray-900">
+              {request.nature || request.type} Leave Request
+            </h1>
+            <span
+              className={`px-4 py-1.5 rounded-full text-sm font-bold border ${getStatusColor(
+                request.status
+              )}`}
             >
-              {request.type === "Regular" && request.nature
-                ? `${request.type} - ${request.nature}`
-                : request.type}{" "}
-              Leave
+              {request.status}
+            </span>
+          </div>
+          <p className="text-gray-500 mt-1">
+            Request ID:{" "}
+            <span className="font-mono text-gray-400">#{request.id}</span>
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: Details & Stats (2/3) */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Main Details Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-gray-800">
+                Request Details
+              </h2>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
+                  {requester?.name.charAt(0)}
+                </div>
+                <div className="text-sm">
+                  <p className="font-semibold text-gray-900">
+                    {requester?.name}
+                  </p>
+                  <p className="text-gray-500 text-xs">
+                    {requester?.designation}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8 grid grid-cols-2 gap-y-8 gap-x-12">
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
+                  Start Date
+                </label>
+                <p className="text-xl font-medium text-gray-900">
+                  {new Date(request.startDate).toLocaleDateString()}
+                </p>
+                {request.startTime && (
+                  <p className="text-sm text-gray-500">{request.startTime}</p>
+                )}
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
+                  End Date
+                </label>
+                <p className="text-xl font-medium text-gray-900">
+                  {new Date(request.endDate).toLocaleDateString()}
+                </p>
+                {request.endTime && (
+                  <p className="text-sm text-gray-500">{request.endTime}</p>
+                )}
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
+                  Duration
+                </label>
+                <p className="text-xl font-medium text-indigo-600">
+                  {request.daysCalculated}{" "}
+                  {request.type === "Short" ? "Hours" : "Days"}
+                </p>
+              </div>
+
+              <div className="col-span-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">
+                  Reason
+                </label>
+                <div className="bg-gray-50 p-4 rounded-xl text-gray-600 leading-relaxed">
+                  {request.reason}
+                </div>
+              </div>
+
+              {/* Unpaid Field / Administrative */}
+              <div className="col-span-2 pt-6 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-bold text-gray-700 block">
+                      Unpaid / LWP Days
+                    </label>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Mark days as Loss of Pay if applicable
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max={request.daysCalculated}
+                      value={request.unpaidLeaveDays || 0}
+                      onChange={(e) =>
+                        updateUnpaidLeaveDays(
+                          request.id,
+                          Number(e.target.value)
+                        )
+                      }
+                      className="w-24 text-center px-3 py-2 border border-gray-200 rounded-lg text-lg font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all hover:border-gray-300"
+                    />
+                    <span className="text-gray-400 font-medium">
+                      / {request.daysCalculated}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 bg-gray-50 border-t border-gray-100">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Remarks (Optional)
+              </label>
+              <textarea
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="Add a note..."
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none mb-6 transition-all"
+                rows={2}
+              />
+
+              <div className="flex gap-4">
+                {hasProcessed ? (
+                  <>
+                    <button
+                      onClick={handleApprove}
+                      disabled={hasProcessed.status === "Approved"}
+                      className={`flex-1 py-3.5 rounded-xl font-bold transition-all ${
+                        hasProcessed.status === "Approved"
+                          ? "bg-green-50 text-green-300 cursor-not-allowed border border-green-100"
+                          : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
+                      }`}
+                    >
+                      {hasProcessed.status === "Approved"
+                        ? "Approved"
+                        : "Change to Approve"}
+                    </button>
+                    <button
+                      onClick={handleReject}
+                      disabled={hasProcessed.status === "Rejected"}
+                      className={`flex-1 py-3.5 rounded-xl font-bold transition-all ${
+                        hasProcessed.status === "Rejected"
+                          ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
+                          : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
+                      }`}
+                    >
+                      {hasProcessed.status === "Rejected"
+                        ? "Rejected"
+                        : "Change to Reject"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleApprove}
+                      className="flex-1 bg-green-600 text-white py-3.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={handleReject}
+                      className="flex-1 bg-white text-red-600 border border-red-200 py-3.5 rounded-xl font-bold hover:bg-red-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      onClick={handleSkip}
+                      className="px-6 py-3.5 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-all"
+                    >
+                      Forward
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="p-8 grid grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
-                Details
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between border-b border-gray-100 pb-2">
-                  <span className="text-gray-600">Start Date</span>
-                  <span className="font-medium text-gray-900">
-                    {request.startDate}
+        {/* Right Column: Timeline (1/3) */}
+        <div className="lg:col-span-1 space-y-8">
+          {/* Employee Balance Stats (Moved Here) */}
+          <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl shadow-lg text-white p-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white opacity-5"></div>
+            <div className="relative z-10 flex justify-between items-end">
+              <div>
+                <h3 className="text-indigo-200 font-medium uppercase tracking-wider text-sm mb-1">
+                  Leave Balance
+                </h3>
+                <div className="text-4xl font-bold">
+                  {request.type === "Short"
+                    ? (requesterBalance?.totalHours || 0) -
+                      (requesterBalance?.usedHours || 0)
+                    : (requesterBalance?.totalDays || 0) -
+                      (requesterBalance?.usedDays || 0)}{" "}
+                  <span className="text-lg text-indigo-300 font-normal">
+                    Remaining
                   </span>
                 </div>
-                {request.type === "Regular" && (
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-gray-600">End Date</span>
-                    <span className="font-medium text-gray-900">
-                      {request.endDate}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between border-b border-gray-100 pb-2">
-                  <span className="text-gray-600">Duration</span>
-                  <span className="font-bold text-indigo-600">
-                    {request.daysCalculated}{" "}
-                    {request.type === "Short" ? "Hours" : "Days"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-gray-600">Unpaid / LWP Days</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max={request.daysCalculated}
-                    value={request.unpaidLeaveDays || 0}
-                    onChange={(e) =>
-                      updateUnpaidLeaveDays(request.id, Number(e.target.value))
-                    }
-                    className="w-20 px-2 py-1 text-right border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-gray-900"
-                  />
-                </div>
+                <p className="text-indigo-200 text-sm mt-2 opacity-80">
+                  Total Quota:{" "}
+                  {request.type === "Short"
+                    ? requesterBalance?.totalHours + " Hours"
+                    : requesterBalance?.totalDays + " Days"}{" "}
+                  • Used:{" "}
+                  {request.type === "Short"
+                    ? requesterBalance?.usedHours + " Hours"
+                    : requesterBalance?.usedDays + " Days"}
+                </p>
               </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
-                Reason
-              </h3>
-              <div className="bg-gray-50 p-4 rounded-lg text-gray-500 border border-gray-200">
-                {request.reason}
-              </div>
+              <button
+                onClick={() => setIsHistoryOpen(true)}
+                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors backdrop-blur-sm"
+              >
+                View History
+              </button>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Employee Stats
-                </h3>
-                <button
-                  onClick={() => setIsHistoryOpen(true)}
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
-                >
-                  View History
-                </button>
-              </div>
-              <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-indigo-800">Total Quota</span>
-                  <span className="font-bold text-indigo-900">
-                    {requesterBalance?.totalDays} Days
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-indigo-800">Used So Far</span>
-                  <span className="font-bold text-indigo-900">
-                    {requesterBalance?.usedDays} Days
-                  </span>
-                </div>
-                <div className="mt-3 pt-3 border-t border-indigo-200 flex justify-between items-center">
-                  <span className="text-indigo-800 text-xs uppercase font-bold">
-                    Remaining
-                  </span>
-                  <span className="font-bold text-xl text-indigo-700">
-                    {(requesterBalance?.totalDays || 0) -
-                      (requesterBalance?.usedDays || 0)}
-                  </span>
-                </div>
-              </div>
-            </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
+              Request Timeline
+            </h3>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="space-y-0 relative">
+                {/* Vertical Line Line */}
+                <div className="absolute left-3 top-3 bottom-3 w-0.5 bg-gray-100"></div>
 
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
-                Approval Hierarchy
-              </h3>
-              <div className="space-y-4">
-                {/* Application Event */}
-                <div className="flex items-start text-xs text-gray-500">
-                  <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 mr-3 flex-shrink-0"></div>
-                  <div>
-                    <span className="font-semibold text-gray-700 block text-sm">
-                      Applied by {requester?.name}
-                    </span>
-                    <span>
-                      {new Date(request.createdAt).toLocaleDateString()} at{" "}
-                      {new Date(request.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Approval Steps */}
-                {request.approvalChain.map((step, idx) => (
+                {timelineEvents.map((event, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start text-xs text-gray-500"
+                    className="relative pl-10 pb-8 last:pb-0 group"
                   >
+                    {/* Node Dot */}
                     <div
-                      className={`h-2 w-2 rounded-full mt-1.5 mr-3 flex-shrink-0 ${
-                        step.status === "Approved"
-                          ? "bg-green-500"
-                          : step.status === "Rejected"
-                          ? "bg-red-500"
-                          : "bg-gray-400"
-                      }`}
+                      className={`absolute left-0 top-1 w-6 h-6 rounded-full border-4 border-white shadow-sm z-10 ${getTimelineIconColor(
+                        event.status
+                      )}`}
                     ></div>
-                    <div>
-                      <span className="font-semibold text-gray-700 block text-sm">
-                        {step.status} by{" "}
-                        {users.find((u) => u.id === step.approverId)?.name}
-                      </span>
-                      <span>
-                        {new Date(step.date).toLocaleDateString()} at{" "}
-                        {new Date(step.date).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                      {step.remarks && (
-                        <p className="mt-1 italic text-gray-400">
-                          &quot;{step.remarks}&quot;
+
+                    {/* Card Content */}
+                    <div className="transition-all hover:translate-x-1">
+                      <p className="text-xs font-bold text-gray-400 uppercase mb-0.5">
+                        {event.date
+                          ? new Date(event.date).toLocaleDateString()
+                          : "Expected"}
+                      </p>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        {event.title}
+                      </h4>
+                      {event.actor && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {event.role || "System"}
                         </p>
+                      )}
+                      {event.remarks && (
+                        <div className="mt-2 bg-gray-50 p-2 rounded text-xs text-gray-600 italic border-l-2 border-gray-200">
+                          &quot;{event.remarks}&quot;
+                        </div>
                       )}
                     </div>
                   </div>
@@ -248,80 +468,6 @@ export default function LeaveRequestDetails({
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="px-8 pb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Remarks (Optional)
-          </label>
-          <textarea
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            placeholder="Add a note for the applicant..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-            rows={2}
-          />
-        </div>
-
-        <div className="p-8 pt-0 flex space-x-4">
-          {/* LOGIC: Check if already processed by current user */}
-          {hasProcessed ? (
-            <div className="w-full">
-              <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg flex justify-between items-center">
-                <span className="text-gray-700 font-medium">
-                  You have{" "}
-                  <span className="font-bold">{hasProcessed.status}</span> this
-                  request.
-                </span>
-              </div>
-              <div className="flex space-x-4">
-                {/* Logic: Allow switching to Approved or Rejected regardless of whether it was Skipped */}
-                <button
-                  onClick={handleApprove}
-                  className={`flex-1 py-3 rounded-xl font-bold transition-all shadow-lg transform hover:-translate-y-0.5 ${
-                    hasProcessed.status === "Approved"
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed" // Already Approved
-                      : "bg-green-600 text-white hover:bg-green-700 shadow-green-200"
-                  }`}
-                  disabled={hasProcessed.status === "Approved"}
-                >
-                  Change to Approved
-                </button>
-                <button
-                  onClick={handleReject}
-                  className={`flex-1 py-3 rounded-xl font-bold transition-all shadow-lg transform hover:-translate-y-0.5 ${
-                    hasProcessed.status === "Rejected"
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-red-600 border border-red-200 hover:bg-red-50"
-                  }`}
-                  disabled={hasProcessed.status === "Rejected"}
-                >
-                  Change to Rejected
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={handleApprove}
-                className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-200 transform hover:-translate-y-0.5"
-              >
-                Approve Request
-              </button>
-              <button
-                onClick={handleReject}
-                className="flex-1 bg-white text-red-600 border border-red-200 py-3 rounded-xl font-bold hover:bg-red-50 transition-all"
-              >
-                Reject
-              </button>
-              <button
-                onClick={handleSkip}
-                className="px-6 py-3 text-gray-500 border border-indigo-200 font-medium hover:text-gray-700 hover:bg-indigo-100 rounded-xl transition-all"
-              >
-                Forward
-              </button>
-            </>
-          )}
         </div>
       </div>
 
