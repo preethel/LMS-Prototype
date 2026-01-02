@@ -130,8 +130,8 @@ export default function LeaveRequestDetails({
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
                 Reason
               </h3>
-              <div className="bg-gray-50 p-4 rounded-lg text-gray-700 italic border border-gray-200">
-                &quot;{request.reason}&quot;
+              <div className="bg-gray-50 p-4 rounded-lg text-gray-500 border border-gray-200">
+                {request.reason}
               </div>
             </div>
           </div>
@@ -302,9 +302,9 @@ export default function LeaveRequestDetails({
               </button>
               <button
                 onClick={handleSkip}
-                className="px-6 py-3 text-gray-500 font-medium hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
+                className="px-6 py-3 text-gray-500 border border-indigo-200 font-medium hover:text-gray-700 hover:bg-indigo-100 rounded-xl transition-all"
               >
-                Skip (Delegate)
+                Forward
               </button>
             </>
           )}
