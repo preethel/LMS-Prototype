@@ -188,7 +188,7 @@ export default function LeaveRequestDetails({
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Header Section */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <button
             onClick={() => router.back()}
@@ -220,7 +220,7 @@ export default function LeaveRequestDetails({
         <div className="lg:col-span-2 space-y-8">
           {/* Main Details Card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex justify-between items-center">
+            <div className="p-4 border-b border-gray-50 bg-gray-50/30 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-800">
                 Request Details
               </h2>
@@ -239,12 +239,12 @@ export default function LeaveRequestDetails({
               </div>
             </div>
 
-            <div className="p-6 grid grid-cols-2 gap-y-6 gap-x-8">
+            <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
                   Start Date
                 </label>
-                <p className="text-xl font-medium text-gray-900">
+                <p className="text-lg font-medium text-gray-900">
                   {new Date(request.startDate).toLocaleDateString()}
                 </p>
                 {request.startTime && (
@@ -255,7 +255,7 @@ export default function LeaveRequestDetails({
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
                   End Date
                 </label>
-                <p className="text-xl font-medium text-gray-900">
+                <p className="text-lg font-medium text-gray-900">
                   {new Date(request.endDate).toLocaleDateString()}
                 </p>
                 {request.endTime && (
@@ -266,24 +266,24 @@ export default function LeaveRequestDetails({
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
                   Duration
                 </label>
-                <p className="text-xl font-medium text-indigo-600">
+                <p className="text-lg font-medium text-indigo-600">
                   {request.daysCalculated}{" "}
                   {request.type === "Short" ? "Hours" : "Days"}
                 </p>
               </div>
 
-              <div className="col-span-2">
+              <div className="col-span-1 md:col-span-3">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">
                   Reason
                 </label>
-                <div className="bg-gray-50 p-4 rounded-xl text-gray-600 leading-relaxed">
+                <div className="bg-gray-50 p-3 rounded-xl text-gray-600 leading-relaxed">
                   {request.reason}
                 </div>
               </div>
 
               {/* Attachments Section */}
               {request.attachments && request.attachments.length > 0 && (
-                <div className="col-span-2">
+                <div className="col-span-1 md:col-span-3">
                   <div className="flex items-center justify-between bg-indigo-50 p-4 rounded-xl border border-indigo-100">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
@@ -309,7 +309,7 @@ export default function LeaveRequestDetails({
               )}
 
               {/* Unpaid Field / Administrative */}
-              <div className="col-span-2 pt-6 border-t border-gray-100">
+              <div className="col-span-1 md:col-span-3 pt-4 border-t border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-bold text-gray-700 block">
@@ -341,7 +341,7 @@ export default function LeaveRequestDetails({
               </div>
             </div>
 
-            <div className="p-6 bg-gray-50 border-t border-gray-100">
+            <div className="p-5 bg-gray-50 border-t border-gray-100">
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Remarks (Optional)
               </label>
@@ -349,7 +349,7 @@ export default function LeaveRequestDetails({
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 placeholder="Add a note..."
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none mb-6 transition-all"
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none mb-4 transition-all"
                 rows={2}
               />
 
@@ -359,7 +359,7 @@ export default function LeaveRequestDetails({
                     <button
                       onClick={handleApprove}
                       disabled={hasProcessed.status === "Approved"}
-                      className={`flex-1 py-3.5 rounded-xl font-bold transition-all ${
+                      className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
                         hasProcessed.status === "Approved"
                           ? "bg-green-50 text-green-300 cursor-not-allowed border border-green-100"
                           : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
@@ -372,7 +372,7 @@ export default function LeaveRequestDetails({
                     <button
                       onClick={handleReject}
                       disabled={hasProcessed.status === "Rejected"}
-                      className={`flex-1 py-3.5 rounded-xl font-bold transition-all ${
+                      className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
                         hasProcessed.status === "Rejected"
                           ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
                           : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
@@ -387,19 +387,19 @@ export default function LeaveRequestDetails({
                   <>
                     <button
                       onClick={handleApprove}
-                      className="flex-1 bg-green-600 text-white py-3.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
+                      className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
                     >
                       Approve
                     </button>
                     <button
                       onClick={handleReject}
-                      className="flex-1 bg-white text-red-600 border border-red-200 py-3.5 rounded-xl font-bold hover:bg-red-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
+                      className="flex-1 bg-white text-red-600 border border-red-200 py-2.5 rounded-xl font-bold hover:bg-red-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
                     >
                       Reject
                     </button>
                     <button
                       onClick={handleSkip}
-                      className="px-6 py-3.5 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-all"
+                      className="px-6 py-2.5 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-all"
                     >
                       Forward
                     </button>
