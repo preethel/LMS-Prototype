@@ -47,4 +47,5 @@ export interface LeaveRequest {
     }[];
     createdAt: string;
     daysCalculated: number; // Stored calculation
+    unpaidLeaveDays?: number; // Days marked as Unpaid / LWP
 }

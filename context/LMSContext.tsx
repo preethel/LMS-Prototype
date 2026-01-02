@@ -44,6 +44,7 @@ interface LMSContextType {
     newStatus: "Approved" | "Rejected" | "Skipped",
     newRemarks: string
   ) => void;
+  updateUnpaidLeaveDays: (leaveId: string, days: number) => void;
 }
 
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
@@ -123,6 +124,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
       approvalChain: [],
       createdAt: new Date().toISOString(),
       daysCalculated: quantity,
+      unpaidLeaveDays: 0,
       startTime: timeRange?.start,
       endTime: timeRange?.end,
     };
@@ -465,6 +467,17 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  const updateUnpaidLeaveDays = (leaveId: string, days: number) => {
+    setLeaves((prev) =>
+      prev.map((l) => {
+        if (l.id !== leaveId) return l;
+        // Validation: Unpaid days cannot exceed total duration
+        const validatedDays = Math.min(Math.max(0, days), l.daysCalculated);
+        return { ...l, unpaidLeaveDays: validatedDays };
+      })
+    );
+  };
+
   return (
     <LMSContext.Provider
       value={{
@@ -482,6 +495,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         getApprovalHistory,
         editApproval,
         skipLeave,
+        updateUnpaidLeaveDays,
       }}
     >
       {children}

@@ -19,6 +19,7 @@ export default function LeaveRequestDetails({
     rejectLeave,
     editApproval,
     skipLeave,
+    updateUnpaidLeaveDays,
   } = useLMS();
   const router = useRouter();
   const [remarks, setRemarks] = useState("");
@@ -122,6 +123,19 @@ export default function LeaveRequestDetails({
                     {request.daysCalculated}{" "}
                     {request.type === "Short" ? "Hours" : "Days"}
                   </span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-gray-600">Unpaid / LWP Days</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max={request.daysCalculated}
+                    value={request.unpaidLeaveDays || 0}
+                    onChange={(e) =>
+                      updateUnpaidLeaveDays(request.id, Number(e.target.value))
+                    }
+                    className="w-20 px-2 py-1 text-right border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-gray-900"
+                  />
                 </div>
               </div>
             </div>
