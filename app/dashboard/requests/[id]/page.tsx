@@ -237,7 +237,7 @@ export default function LeaveRequestDetails({
               </div>
             </div>
 
-            <div className="p-8 grid grid-cols-2 gap-y-8 gap-x-12">
+            <div className="p-6 grid grid-cols-2 gap-y-6 gap-x-8">
               <div>
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
                   Start Date
