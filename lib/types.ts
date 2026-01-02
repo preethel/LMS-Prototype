@@ -1,7 +1,7 @@
 export type LeaveType = 'Regular' | 'Short';
 export type LeaveNature = 'Casual' | 'Sick' | 'Maternity' | 'Pilgrim' | 'Unpaid' | 'Other';
 
-export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Skipped';
+export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Skipped' | 'Recommended' | 'Not Recommended';
 
 export interface User {
     id: string;
@@ -10,6 +10,7 @@ export interface User {
     approver?: string; // ID of the next person in the hierarchy
     avatarUrl?: string;
     designation: string;
+    role: 'Employee' | 'TeamLead' | 'Manager' | 'HR' | 'MD';
 }
 
 export interface LeaveBalance {
@@ -41,7 +42,7 @@ export interface LeaveRequest {
     currentApproverId?: string; // Who needs to approve this right now?
     approvalChain: {
         approverId: string;
-        status: 'Approved' | 'Rejected' | 'Skipped';
+        status: 'Approved' | 'Rejected' | 'Skipped' | 'Recommended' | 'Not Recommended';
         date: string;
         remarks?: string;
     }[];

@@ -32,8 +32,13 @@ export default function LeaveRequestDetails({
 
   if (!request || !currentUser)
     return (
-      <div className="p-12 text-center text-gray-500">Request not found</div>
+      <div className="p-12 text-center text-gray-500">
+        Request not found or not logged in
+      </div>
     );
+
+  const isFinalAuthority =
+    currentUser.role === "HR" || currentUser.role === "MD";
 
   const requester = users.find((u) => u.id === request.userId);
   const requesterBalance = balances.find((b) => b.userId === request.userId);
@@ -78,6 +83,8 @@ export default function LeaveRequestDetails({
         | "Approved"
         | "Rejected"
         | "Skipped"
+        | "Recommended"
+        | "Not Recommended"
         | "Applied";
       actor?: string;
       role?: string;
@@ -160,6 +167,8 @@ export default function LeaveRequestDetails({
       case "Pending":
         return "bg-orange-100 text-orange-700 border-orange-200";
       case "Skipped":
+      case "Recommended":
+      case "Not Recommended":
         return "bg-gray-100 text-gray-700 border-gray-200";
       case "Applied":
         return "bg-blue-100 text-blue-700 border-blue-200";
@@ -178,6 +187,10 @@ export default function LeaveRequestDetails({
         return "bg-red-500";
       case "Skipped":
         return "bg-gray-400";
+      case "Recommended":
+        return "bg-teal-500";
+      case "Not Recommended":
+        return "bg-orange-500";
       case "Pending":
         return "bg-orange-500 animate-pulse";
       default:
@@ -308,37 +321,39 @@ export default function LeaveRequestDetails({
                 </div>
               )}
 
-              {/* Unpaid Field / Administrative */}
-              <div className="col-span-1 md:col-span-3 pt-4 border-t border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-bold text-gray-700 block">
-                      Unpaid / LWP Days
-                    </label>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Mark days as Loss of Pay if applicable
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      max={request.daysCalculated}
-                      value={request.unpaidLeaveDays || 0}
-                      onChange={(e) =>
-                        updateUnpaidLeaveDays(
-                          request.id,
-                          Number(e.target.value)
-                        )
-                      }
-                      className="w-24 text-center px-3 py-2 border border-gray-200 rounded-lg text-lg font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all hover:border-gray-300"
-                    />
-                    <span className="text-gray-400 font-medium">
-                      / {request.daysCalculated}
-                    </span>
+              {/* Unpaid Field / Administrative - ONLY VISIBLE TO HR/MD */}
+              {isFinalAuthority && (
+                <div className="col-span-1 md:col-span-3 pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-bold text-gray-700 block">
+                        Unpaid / LWP Days
+                      </label>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Mark days as Loss of Pay if applicable
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max={request.daysCalculated}
+                        value={request.unpaidLeaveDays || 0}
+                        onChange={(e) =>
+                          updateUnpaidLeaveDays(
+                            request.id,
+                            Number(e.target.value)
+                          )
+                        }
+                        className="w-24 text-center px-3 py-2 border border-gray-200 rounded-lg text-lg font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all hover:border-gray-300"
+                      />
+                      <span className="text-gray-400 font-medium">
+                        / {request.daysCalculated}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="p-5 bg-gray-50 border-t border-gray-100">
@@ -365,22 +380,36 @@ export default function LeaveRequestDetails({
                           : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
                       }`}
                     >
-                      {hasProcessed.status === "Approved"
-                        ? "Approved"
-                        : "Change to Approve"}
+                      {hasProcessed.status === "Approved" ||
+                      hasProcessed.status === "Recommended"
+                        ? isFinalAuthority
+                          ? "Approved"
+                          : "Recommended"
+                        : isFinalAuthority
+                        ? "Change to Approve"
+                        : "Change to Recommend"}
                     </button>
                     <button
                       onClick={handleReject}
-                      disabled={hasProcessed.status === "Rejected"}
+                      disabled={
+                        hasProcessed.status === "Rejected" ||
+                        hasProcessed.status === "Not Recommended"
+                      }
                       className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
-                        hasProcessed.status === "Rejected"
+                        hasProcessed.status === "Rejected" ||
+                        hasProcessed.status === "Not Recommended"
                           ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
                           : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
                       }`}
                     >
-                      {hasProcessed.status === "Rejected"
-                        ? "Rejected"
-                        : "Change to Reject"}
+                      {hasProcessed.status === "Rejected" ||
+                      hasProcessed.status === "Not Recommended"
+                        ? isFinalAuthority
+                          ? "Rejected"
+                          : "Not Recommended"
+                        : isFinalAuthority
+                        ? "Change to Reject"
+                        : "Change to Not Recommend"}
                     </button>
                   </>
                 ) : (
@@ -389,13 +418,13 @@ export default function LeaveRequestDetails({
                       onClick={handleApprove}
                       className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
                     >
-                      Approve
+                      {isFinalAuthority ? "Approve" : "Recommend"}
                     </button>
                     <button
                       onClick={handleReject}
                       className="flex-1 bg-white text-red-600 border border-red-200 py-2.5 rounded-xl font-bold hover:bg-red-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
                     >
-                      Reject
+                      {isFinalAuthority ? "Reject" : "Not Recommend"}
                     </button>
                     <button
                       onClick={handleSkip}

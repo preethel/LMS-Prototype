@@ -146,38 +146,52 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
       prev.map((leave) => {
         if (leave.id !== leaveId) return leave;
 
+        const currentApproverUser = users.find((u) => u.id === approverId);
+        const isFinalAuthority =
+          currentApproverUser?.role === "HR" ||
+          currentApproverUser?.role === "MD";
+
+        // Determine Action Status
+        const actionStatus = isFinalAuthority ? "Approved" : "Recommended";
+
         // Add to chain
         const newChain = [
           ...leave.approvalChain,
           {
             approverId,
-            status: "Approved" as const,
+            status: actionStatus as any, // Cast to avoid transient type errors before dependent file updates
             date: new Date().toISOString(),
             remarks,
           },
         ];
 
-        // Recursive Logic: Check if *this* approver has an approver
-        const currentApproverUser = users.find((u) => u.id === approverId);
-        const nextApproverId = currentApproverUser?.approver;
-
-        if (nextApproverId) {
-          // Move up
-          return {
-            ...leave,
-            approvalChain: newChain,
-            currentApproverId: nextApproverId,
-          };
-        } else {
+        if (isFinalAuthority) {
           // Final Approval
-          // Balance was already deducted at application time.
-
           return {
             ...leave,
             approvalChain: newChain,
             currentApproverId: undefined,
             status: "Approved",
           };
+        } else {
+          // Move up hierarchy
+          const nextApproverId = currentApproverUser?.approver;
+          if (nextApproverId) {
+            return {
+              ...leave,
+              approvalChain: newChain,
+              currentApproverId: nextApproverId, // Move to next
+            };
+          } else {
+            // Edge case: No next approver but not HR/MD? Should likely finish as Approved or stay Pending?
+            // Assuming chain ends at MD anyway.
+            return {
+              ...leave,
+              approvalChain: newChain,
+              currentApproverId: undefined, // End of chain means approved?
+              status: "Approved",
+            };
+          }
         }
       })
     );
@@ -189,47 +203,78 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     remarks?: string
   ) => {
     // Restore Balance
-    const leave = leaves.find((l) => l.id === leaveId);
-    if (leave) {
-      setBalances((prevBal) =>
-        prevBal.map((b) => {
-          if (b.userId === leave.userId) {
-            if (leave.type === "Short") {
-              return {
-                ...b,
-                usedHours: Math.max(
-                  0,
-                  (b.usedHours || 0) - leave.daysCalculated
-                ),
-              };
-            } else {
-              return {
-                ...b,
-                usedDays: Math.max(0, (b.usedDays || 0) - leave.daysCalculated),
-              };
-            }
-          }
-          return b;
-        })
-      );
-    }
+    // Note: Balance restoration moved inside setLeaves to depend on role check
+    /* if (leave) { ... } */
     setLeaves((prev) =>
       prev.map((leave) => {
         if (leave.id !== leaveId) return leave;
-        return {
-          ...leave,
-          status: "Rejected",
-          currentApproverId: undefined,
-          approvalChain: [
-            ...leave.approvalChain,
-            {
-              approverId,
-              status: "Rejected" as const,
-              date: new Date().toISOString(),
-              remarks,
-            },
-          ],
-        };
+
+        const currentApproverUser = users.find((u) => u.id === approverId);
+        const isFinalAuthority =
+          currentApproverUser?.role === "HR" ||
+          currentApproverUser?.role === "MD";
+
+        if (isFinalAuthority) {
+          // Restore Balance ONLY if it's a final Rejection
+          setBalances((prevBal) =>
+            prevBal.map((b) => {
+              if (b.userId === leave.userId) {
+                if (leave.type === "Short") {
+                  return {
+                    ...b,
+                    usedHours: Math.max(
+                      0,
+                      (b.usedHours || 0) - leave.daysCalculated
+                    ),
+                  };
+                } else {
+                  return {
+                    ...b,
+                    usedDays: Math.max(
+                      0,
+                      (b.usedDays || 0) - leave.daysCalculated
+                    ),
+                  };
+                }
+              }
+              return b;
+            })
+          );
+
+          return {
+            ...leave,
+            status: "Rejected",
+            currentApproverId: undefined,
+            approvalChain: [
+              ...leave.approvalChain,
+              {
+                approverId,
+                status: "Rejected" as const,
+                date: new Date().toISOString(),
+                remarks,
+              },
+            ],
+          };
+        } else {
+          // "Not Recommended" - Moves to next approver
+          const nextApproverId = currentApproverUser?.approver;
+          // If no next, then it is effectively rejected? Or stays stuck?
+          // Assuming hierarchy leads to MD.
+
+          return {
+            ...leave,
+            currentApproverId: nextApproverId, // Pass it on
+            approvalChain: [
+              ...leave.approvalChain,
+              {
+                approverId,
+                status: "Not Recommended" as any,
+                date: new Date().toISOString(),
+                remarks,
+              },
+            ],
+          };
+        }
       })
     );
   };
@@ -268,6 +313,11 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getPendingApprovals = (approverId: string) => {
+    const approver = users.find((u) => u.id === approverId);
+    if (approver?.role === "HR") {
+      // HR sees ALL pending requests
+      return leaves.filter((l) => l.status === "Pending");
+    }
     return leaves.filter(
       (l) => l.status === "Pending" && l.currentApproverId === approverId
     );

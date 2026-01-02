@@ -9,6 +9,7 @@ export const MOCK_USERS: User[] = [
         name: 'John Junior',
         email: 'john@company.com',
         designation: 'Frontend Developer',
+        role: 'Employee',
         approver: 'u2', // Reports to Team Lead
     },
     {
@@ -16,6 +17,7 @@ export const MOCK_USERS: User[] = [
         name: 'Sarah Lead',
         email: 'sarah@company.com',
         designation: 'Team Lead',
+        role: 'TeamLead',
         approver: 'u3', // Reports to Manager
     },
     {
@@ -23,6 +25,7 @@ export const MOCK_USERS: User[] = [
         name: 'Mike Manager',
         email: 'mike@company.com',
         designation: 'Engineering Manager',
+        role: 'Manager',
         approver: 'u4', // Reports to Director
     },
     {
@@ -30,13 +33,22 @@ export const MOCK_USERS: User[] = [
         name: 'Diana Director',
         email: 'diana@company.com',
         designation: 'Director of Engineering',
+        role: 'MD',
         // No approver = Final node
+    },
+    {
+        id: 'u6', // New HR User
+        name: 'Helen HR',
+        email: 'helen@company.com',
+        designation: 'HR Manager',
+        role: 'HR',
     },
     {
         id: 'u5',
         name: 'Emily Employee',
         email: 'emily@company.com',
         designation: 'UI Designer',
+        role: 'Employee',
         approver: 'u2', // Also reports to Sarah
     },
 ];
