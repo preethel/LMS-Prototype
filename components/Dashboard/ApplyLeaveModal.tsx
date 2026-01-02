@@ -322,55 +322,74 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
 
             {/* Attachments Input */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Attachments (Optional)
               </label>
-              <div className="border border-dashed border-gray-300 rounded-lg p-4 hover:bg-gray-50 transition-colors text-center">
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="file-upload"
-                  accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="cursor-pointer flex flex-col items-center"
-                >
-                  <span className="text-indigo-600 font-medium hover:text-indigo-800">
-                    Click to upload
-                  </span>
-                  <span className="text-gray-400 text-xs mt-1">
-                    Max 5 files, 10MB each
-                  </span>
-                </label>
+
+              <div className="flex flex-wrap gap-3">
+                {/* Existing Files */}
+                {selectedFiles.map((file, idx) => (
+                  <div
+                    key={idx}
+                    className="relative w-16 h-16 bg-gray-50 border border-gray-200 rounded-lg flex flex-col items-center justify-center group overflow-hidden"
+                    title={file.name}
+                  >
+                    <span className="text-2xl">📄</span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(idx)}
+                      className="absolute top-0.5 right-0.5 bg-red-100 text-red-500 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ✕
+                    </button>
+                    <span className="text-[9px] text-gray-500 w-full px-1 text-center truncate absolute bottom-1">
+                      {(file.size / 1024).toFixed(0)}KB
+                    </span>
+                  </div>
+                ))}
+
+                {/* Add Button (Plus Icon) */}
+                {selectedFiles.length < 5 && (
+                  <>
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="file-upload"
+                      accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                    />
+                    <label
+                      htmlFor="file-upload"
+                      className="w-16 h-16 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-gray-400 hover:text-indigo-500"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                    </label>
+                  </>
+                )}
               </div>
+
+              {selectedFiles.length === 0 && (
+                <p className="text-xs text-gray-400 mt-2">
+                  Max 5 files, 10MB each. Supported: JPG, PNG, PDF, DOC.
+                </p>
+              )}
 
               {fileError && (
                 <p className="text-red-500 text-xs mt-2">{fileError}</p>
-              )}
-
-              {selectedFiles.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {selectedFiles.map((file, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded border border-gray-100"
-                    >
-                      <span className="truncate max-w-[200px] text-gray-600">
-                        {file.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(idx)}
-                        className="text-red-500 hover:text-red-700 text-xs font-bold px-2"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
               )}
             </div>
 
