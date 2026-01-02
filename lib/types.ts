@@ -48,4 +48,13 @@ export interface LeaveRequest {
     createdAt: string;
     daysCalculated: number; // Stored calculation
     unpaidLeaveDays?: number; // Days marked as Unpaid / LWP
+    attachments?: Attachment[]; // File attachments
+}
+
+export interface Attachment {
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    url: string; // Mock URL or Base64
 }

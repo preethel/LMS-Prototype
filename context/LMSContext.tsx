@@ -2,6 +2,7 @@
 
 import { MOCK_BALANCES, MOCK_LEAVES, MOCK_USERS } from "@/lib/mockData";
 import {
+  Attachment,
   LeaveBalance,
   LeaveNature,
   LeaveRequest,
@@ -25,7 +26,8 @@ interface LMSContextType {
     reason: string,
     nature?: LeaveNature,
     isShort?: boolean,
-    timeRange?: { start: string; end: string }
+    timeRange?: { start: string; end: string },
+    attachments?: Attachment[]
   ) => void;
   approveLeave: (
     submiitedByUserId: string,
@@ -71,7 +73,8 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     reason: string,
     nature?: LeaveNature,
     isShort?: boolean,
-    timeRange?: { start: string; end: string }
+    timeRange?: { start: string; end: string },
+    attachments?: Attachment[]
   ) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return;
@@ -127,6 +130,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
       unpaidLeaveDays: 0,
       startTime: timeRange?.start,
       endTime: timeRange?.end,
+      attachments: attachments || [],
     };
 
     setLeaves((prev) => [newLeave, ...prev]);

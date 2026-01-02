@@ -68,6 +68,42 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
     return "";
   }, [type, duration, currentUser, balances, nature]);
 
+  // File Upload State
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState("");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setFileError("");
+
+      // Combined list
+      const totalFiles = [...selectedFiles, ...newFiles];
+
+      // 1. Validate Count
+      if (totalFiles.length > 5) {
+        setFileError("Maximum 5 files allowed.");
+        return;
+      }
+
+      // 2. Validate Size
+      const oversizedFiles = newFiles.filter(
+        (file) => file.size > 10 * 1024 * 1024
+      ); // 10MB
+      if (oversizedFiles.length > 0) {
+        setFileError(`File ${oversizedFiles[0].name} exceeds 10MB limit.`);
+        return;
+      }
+
+      setSelectedFiles(totalFiles);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setFileError("");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
@@ -78,6 +114,15 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
     if (type === "Regular" && !nature) return;
     if (type === "Short" && (!startTime || !endTime)) return;
 
+    // Mock File Upload (Convert File objects to Attachments)
+    const attachments = selectedFiles.map((file) => ({
+      id: `f${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      url: URL.createObjectURL(file), // Mock URL for blob
+    }));
+
     applyLeave(
       currentUser.id,
       type,
@@ -86,7 +131,8 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
       reason,
       type === "Regular" ? (nature as LeaveNature) : undefined,
       type === "Short",
-      type === "Short" ? { start: startTime, end: endTime } : undefined
+      type === "Short" ? { start: startTime, end: endTime } : undefined,
+      attachments
     );
 
     onClose();
@@ -272,6 +318,60 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
                 placeholder="E.g. Sick leave, personal errand..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none"
               />
+            </div>
+
+            {/* Attachments Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Attachments (Optional)
+              </label>
+              <div className="border border-dashed border-gray-300 rounded-lg p-4 hover:bg-gray-50 transition-colors text-center">
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="file-upload"
+                  accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="cursor-pointer flex flex-col items-center"
+                >
+                  <span className="text-indigo-600 font-medium hover:text-indigo-800">
+                    Click to upload
+                  </span>
+                  <span className="text-gray-400 text-xs mt-1">
+                    Max 5 files, 10MB each
+                  </span>
+                </label>
+              </div>
+
+              {fileError && (
+                <p className="text-red-500 text-xs mt-2">{fileError}</p>
+              )}
+
+              {selectedFiles.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {selectedFiles.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded border border-gray-100"
+                    >
+                      <span className="truncate max-w-[200px] text-gray-600">
+                        {file.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(idx)}
+                        className="text-red-500 hover:text-red-700 text-xs font-bold px-2"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Warning Message */}

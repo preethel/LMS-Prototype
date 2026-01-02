@@ -1,5 +1,6 @@
 "use client";
 
+import AttachmentsModal from "@/components/Dashboard/AttachmentsModal";
 import EmployeeHistoryModal from "@/components/Dashboard/EmployeeHistoryModal";
 import { useLMS } from "@/context/LMSContext";
 import { useRouter } from "next/navigation";
@@ -24,6 +25,7 @@ export default function LeaveRequestDetails({
   const router = useRouter();
   const [remarks, setRemarks] = useState("");
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
 
   const { id } = use(params);
   const request = leaves.find((l) => l.id === id);
@@ -279,6 +281,33 @@ export default function LeaveRequestDetails({
                 </div>
               </div>
 
+              {/* Attachments Section */}
+              {request.attachments && request.attachments.length > 0 && (
+                <div className="col-span-2">
+                  <div className="flex items-center justify-between bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                        📎
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-indigo-900 text-sm">
+                          Attachments
+                        </h4>
+                        <p className="text-xs text-indigo-600">
+                          {request.attachments.length} files attached
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsAttachmentsOpen(true)}
+                      className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                    >
+                      View & Download
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Unpaid Field / Administrative */}
               <div className="col-span-2 pt-6 border-t border-gray-100">
                 <div className="flex items-center justify-between">
@@ -476,6 +505,12 @@ export default function LeaveRequestDetails({
         onClose={() => setIsHistoryOpen(false)}
         userId={request.userId}
         employeeName={requester?.name || "Employee"}
+      />
+
+      <AttachmentsModal
+        isOpen={isAttachmentsOpen}
+        onClose={() => setIsAttachmentsOpen(false)}
+        attachments={request.attachments || []}
       />
     </div>
   );
