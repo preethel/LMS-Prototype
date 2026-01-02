@@ -3,7 +3,8 @@
 import AttachmentsModal from "@/components/Dashboard/AttachmentsModal";
 import EmployeeHistoryModal from "@/components/Dashboard/EmployeeHistoryModal";
 import { useLMS } from "@/context/LMSContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { formatDate } from "@/lib/utils";
 import { use, useState } from "react";
 
 export default function LeaveRequestDetails({
@@ -23,6 +24,8 @@ export default function LeaveRequestDetails({
     updateUnpaidLeaveDays,
   } = useLMS();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isReadOnly = searchParams.get("readOnly") === "true";
   const [remarks, setRemarks] = useState("");
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
@@ -77,15 +80,15 @@ export default function LeaveRequestDetails({
       title: string;
       date?: string;
       status:
-        | "Calculated"
-        | "Pending"
-        | "Upcoming"
-        | "Approved"
-        | "Rejected"
-        | "Skipped"
-        | "Recommended"
-        | "Not Recommended"
-        | "Applied";
+      | "Calculated"
+      | "Pending"
+      | "Upcoming"
+      | "Approved"
+      | "Rejected"
+      | "Skipped"
+      | "Recommended"
+      | "Not Recommended"
+      | "Applied";
       actor?: string;
       role?: string;
       remarks?: string;
@@ -104,14 +107,31 @@ export default function LeaveRequestDetails({
     // 2. Past Actions (Approval Chain)
     request.approvalChain.forEach((step) => {
       const actor = users.find((u) => u.id === step.approverId);
-      events.push({
-        title: `${step.status} by ${actor?.name}`,
+
+      // Determine display status (Recommend vs Approve)
+      let displayStatus = step.status;
+      if (
+        step.status === "Approved" &&
+        actor &&
+        !["HR", "MD"].includes(actor.role)
+      ) {
+        displayStatus = "Recommended";
+      }
+
+      const event: any = {
+        title: `${displayStatus} by ${actor?.name}`,
         date: step.date,
-        status: step.status,
+        status: step.status, // Keep original status for color logic
         actor: actor?.name,
         role: actor?.designation,
-        remarks: step.remarks,
-      });
+      };
+
+      // Only show remarks if NOT the applicant
+      if (currentUser.id !== request.userId) {
+        event.remarks = step.remarks;
+      }
+
+      events.push(event);
     });
 
     // 3. Current & Future (If still pending/active)
@@ -258,7 +278,7 @@ export default function LeaveRequestDetails({
                   Start Date
                 </label>
                 <p className="text-lg font-medium text-gray-900">
-                  {new Date(request.startDate).toLocaleDateString()}
+                  {formatDate(request.startDate)}
                 </p>
                 {request.startTime && (
                   <p className="text-sm text-gray-500">{request.startTime}</p>
@@ -269,7 +289,7 @@ export default function LeaveRequestDetails({
                   End Date
                 </label>
                 <p className="text-lg font-medium text-gray-900">
-                  {new Date(request.endDate).toLocaleDateString()}
+                  {formatDate(request.endDate)}
                 </p>
                 {request.endTime && (
                   <p className="text-sm text-gray-500">{request.endTime}</p>
@@ -356,86 +376,88 @@ export default function LeaveRequestDetails({
               )}
             </div>
 
-            <div className="p-5 bg-gray-50 border-t border-gray-100">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Remarks (Optional)
-              </label>
-              <textarea
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                placeholder="Add a note..."
-                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none mb-4 transition-all"
-                rows={2}
-              />
-
-              <div className="flex gap-4">
-                {hasProcessed ? (
-                  <>
-                    <button
-                      onClick={handleApprove}
-                      disabled={hasProcessed.status === "Approved"}
-                      className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
-                        hasProcessed.status === "Approved"
-                          ? "bg-green-50 text-green-300 cursor-not-allowed border border-green-100"
-                          : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
-                      }`}
-                    >
-                      {hasProcessed.status === "Approved" ||
-                      hasProcessed.status === "Recommended"
-                        ? isFinalAuthority
-                          ? "Approved"
-                          : "Recommended"
-                        : isFinalAuthority
-                        ? "Change to Approve"
-                        : "Change to Recommend"}
-                    </button>
-                    <button
-                      onClick={handleReject}
-                      disabled={
-                        hasProcessed.status === "Rejected" ||
-                        hasProcessed.status === "Not Recommended"
-                      }
-                      className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
-                        hasProcessed.status === "Rejected" ||
-                        hasProcessed.status === "Not Recommended"
-                          ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
-                          : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
-                      }`}
-                    >
-                      {hasProcessed.status === "Rejected" ||
-                      hasProcessed.status === "Not Recommended"
-                        ? isFinalAuthority
-                          ? "Rejected"
-                          : "Not Recommended"
-                        : isFinalAuthority
-                        ? "Change to Reject"
-                        : "Change to Not Recommend"}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={handleApprove}
-                      className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
-                    >
-                      {isFinalAuthority ? "Approve" : "Recommend"}
-                    </button>
-                    <button
-                      onClick={handleReject}
-                      className="flex-1 bg-white text-red-600 border border-red-200 py-2.5 rounded-xl font-bold hover:bg-red-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
-                    >
-                      {isFinalAuthority ? "Reject" : "Not Recommend"}
-                    </button>
-                    <button
-                      onClick={handleSkip}
-                      className="px-6 py-2.5 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-all"
-                    >
-                      Forward
-                    </button>
-                  </>
+            {(!isReadOnly || hasProcessed) && (
+              <div className="p-5 bg-gray-50 border-t border-gray-100">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  {hasProcessed && isReadOnly ? "My Remarks" : "Remarks (Optional)"}
+                </label>
+                <textarea
+                  value={hasProcessed && isReadOnly ? hasProcessed.remarks || "" : remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Add a note..."
+                  disabled={!!(hasProcessed && isReadOnly)}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none mb-4 transition-all disabled:bg-gray-100 disabled:text-gray-500"
+                  rows={2}
+                />
+                {!isReadOnly && (
+                  <div className="flex gap-4">
+                    {hasProcessed ? (
+                      <>
+                        <button
+                          onClick={handleApprove}
+                          disabled={hasProcessed.status === "Approved"}
+                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${hasProcessed.status === "Approved"
+                            ? "bg-green-50 text-green-300 cursor-not-allowed border border-green-100"
+                            : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
+                            }`}
+                        >
+                          {hasProcessed.status === "Approved" ||
+                            hasProcessed.status === "Recommended"
+                            ? isFinalAuthority
+                              ? "Approved"
+                              : "Recommended"
+                            : isFinalAuthority
+                              ? "Change to Approve"
+                              : "Change to Recommend"}
+                        </button>
+                        <button
+                          onClick={handleReject}
+                          disabled={
+                            hasProcessed.status === "Rejected" ||
+                            hasProcessed.status === "Not Recommended"
+                          }
+                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${hasProcessed.status === "Rejected" ||
+                            hasProcessed.status === "Not Recommended"
+                            ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
+                            : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
+                            }`}
+                        >
+                          {hasProcessed.status === "Rejected" ||
+                            hasProcessed.status === "Not Recommended"
+                            ? isFinalAuthority
+                              ? "Rejected"
+                              : "Not Recommended"
+                            : isFinalAuthority
+                              ? "Change to Reject"
+                              : "Change to Not Recommend"}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={handleApprove}
+                          className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
+                        >
+                          {isFinalAuthority ? "Approve" : "Recommend"}
+                        </button>
+                        <button
+                          onClick={handleReject}
+                          className="flex-1 bg-white text-red-600 border border-red-200 py-2.5 rounded-xl font-bold hover:bg-red-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
+                        >
+                          {isFinalAuthority ? "Reject" : "Not Recommend"}
+                        </button>
+                        <button
+                          onClick={handleSkip}
+                          className="px-6 py-2.5 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-all"
+                        >
+                          Forward
+                        </button>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -452,9 +474,9 @@ export default function LeaveRequestDetails({
                 <div className="text-4xl font-bold">
                   {request.type === "Short"
                     ? (requesterBalance?.totalHours || 0) -
-                      (requesterBalance?.usedHours || 0)
+                    (requesterBalance?.usedHours || 0)
                     : (requesterBalance?.totalDays || 0) -
-                      (requesterBalance?.usedDays || 0)}{" "}
+                    (requesterBalance?.usedDays || 0)}{" "}
                   <span className="text-lg text-indigo-300 font-normal">
                     Remaining
                   </span>
@@ -504,7 +526,7 @@ export default function LeaveRequestDetails({
                     <div className="transition-all hover:translate-x-1">
                       <p className="text-xs font-bold text-gray-400 uppercase mb-0.5">
                         {event.date
-                          ? new Date(event.date).toLocaleDateString()
+                          ? formatDate(event.date)
                           : "Expected"}
                       </p>
                       <h4 className="text-sm font-bold text-gray-900">

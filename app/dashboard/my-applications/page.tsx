@@ -1,11 +1,15 @@
 "use client";
 
 import { useLMS } from "@/context/LMSContext";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { formatDate } from "@/lib/utils";
 
 export default function MyApplicationsPage() {
   const { currentUser, leaves, cancelLeave } = useLMS();
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const itemsPerPage = 10;
 
   if (!currentUser) return null;
@@ -64,7 +68,12 @@ export default function MyApplicationsPage() {
                 currentLeaves.map((leave) => (
                   <tr
                     key={leave.id}
-                    className="hover:bg-gray-50/50 transition-colors"
+                    onClick={() => setSelectedId(leave.id)}
+                    onDoubleClick={() => router.push(`/dashboard/requests/${leave.id}?readOnly=true`)}
+                    className={`cursor-pointer transition-colors ${selectedId === leave.id
+                      ? "bg-indigo-50 border-l-4 border-indigo-500"
+                      : "hover:bg-gray-50/50 border-l-4 border-transparent"
+                      }`}
                   >
                     <td className="px-6 py-4 font-medium text-gray-900">
                       {leave.type}
@@ -76,8 +85,8 @@ export default function MyApplicationsPage() {
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       {leave.startDate === leave.endDate
-                        ? leave.startDate
-                        : `${leave.startDate} - ${leave.endDate}`}
+                        ? formatDate(leave.startDate)
+                        : `${formatDate(leave.startDate)} to ${formatDate(leave.endDate)}`}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       {leave.daysCalculated}{" "}

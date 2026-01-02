@@ -3,6 +3,7 @@
 import { useLMS } from "@/context/LMSContext";
 import Link from "next/link";
 import { useState } from "react";
+import { formatDate } from "@/lib/utils";
 
 export default function ApprovalsPage() {
   const { currentUser, getPendingApprovals, getApprovalHistory, users } =
@@ -60,11 +61,10 @@ export default function ApprovalsPage() {
       <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit mb-6">
         <button
           onClick={() => handleTabChange("Pending")}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-            activeTab === "Pending"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900"
-          }`}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === "Pending"
+            ? "bg-white text-gray-900 shadow-sm"
+            : "text-gray-500 hover:text-gray-900"
+            }`}
         >
           Pending Requests
           {activeTab !== "Pending" && (
@@ -75,11 +75,10 @@ export default function ApprovalsPage() {
         </button>
         <button
           onClick={() => handleTabChange("History")}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-            activeTab === "History"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900"
-          }`}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === "History"
+            ? "bg-white text-gray-900 shadow-sm"
+            : "text-gray-500 hover:text-gray-900"
+            }`}
         >
           History
         </button>
@@ -91,7 +90,9 @@ export default function ApprovalsPage() {
             <thead className="bg-gray-50 text-gray-500 font-medium">
               <tr>
                 <th className="px-6 py-3">Applicant</th>
-                <th className="px-6 py-3">Last Approver</th>
+                {activeTab === "Pending" && (
+                  <th className="px-6 py-3">Last Approver</th>
+                )}
                 <th className="px-6 py-3">Type</th>
                 {activeTab === "Pending" ? (
                   <>
@@ -100,13 +101,15 @@ export default function ApprovalsPage() {
                   </>
                 ) : (
                   <>
-                    <th className="px-6 py-3">Last Approver</th>
-                    <th className="px-6 py-3">Decided On</th>
-                    <th className="px-6 py-3">My Decision</th>
+                    <>
+                      <th className="px-6 py-3">Duration</th>
+                      <th className="px-6 py-3">Dates</th>
+                      <th className="px-6 py-3">My Decision</th>
+                    </>
                   </>
                 )}
                 <th className="px-6 py-3">
-                  {activeTab === "Pending" ? "Action" : "Final Status"}
+                  {activeTab === "Pending" ? "Action" : "Action"}
                 </th>
               </tr>
             </thead>
@@ -134,10 +137,10 @@ export default function ApprovalsPage() {
                         <td className="px-6 py-4 text-gray-600 font-medium">
                           {request.approvalChain.length > 0
                             ? getUserName(
-                                request.approvalChain[
-                                  request.approvalChain.length - 1
-                                ].approverId
-                              )
+                              request.approvalChain[
+                                request.approvalChain.length - 1
+                              ].approverId
+                            )
                             : "Direct"}
                         </td>
                         <td className="px-6 py-4">{request.type}</td>
@@ -146,7 +149,7 @@ export default function ApprovalsPage() {
                           {request.type === "Short" ? "Hrs" : "Days"}
                         </td>
                         <td className="px-6 py-4 text-gray-500">
-                          {request.startDate}
+                          {formatDate(request.startDate)}
                         </td>
                         <td className="px-6 py-4">
                           <Link
@@ -170,20 +173,21 @@ export default function ApprovalsPage() {
                         <td className="px-6 py-4 font-semibold text-gray-900">
                           {getUserName(request.userId)}
                         </td>
-                        {/* Skip Last Approver for History tab (maybe not needed or show Decided By Me?) */}
-                        <td className="px-6 py-4 text-gray-400">-</td>
                         <td className="px-6 py-4">{request.type}</td>
+                        <td className="px-6 py-4">
+                          {request.daysCalculated}{" "}
+                          {request.type === "Short" ? "Hrs" : "Days"}
+                        </td>
                         <td className="px-6 py-4 text-gray-500">
-                          {new Date(myAction?.date || "").toLocaleDateString()}
+                          {formatDate(request.startDate)}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
                             <span
-                              className={`font-medium ${
-                                myAction?.status === "Approved"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
+                              className={`font-medium ${myAction?.status === "Approved"
+                                ? "text-green-600"
+                                : "text-red-600"
+                                }`}
                             >
                               {myAction?.status}
                             </span>
@@ -195,13 +199,12 @@ export default function ApprovalsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-                              request.status
-                            )}`}
+                          <Link
+                            href={`/dashboard/requests/${request.id}?readOnly=true`}
+                            className="text-indigo-600 hover:text-indigo-800 font-semibold text-xs border border-indigo-200 px-3 py-1.5 rounded transition-colors"
                           >
-                            {request.status}
-                          </span>
+                            Details
+                          </Link>
                         </td>
                       </tr>
                     );
