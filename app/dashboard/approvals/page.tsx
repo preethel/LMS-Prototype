@@ -1,7 +1,7 @@
 "use client";
 
 import { useLMS } from "@/context/LMSContext";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDuration } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -56,11 +56,10 @@ export default function ApprovalsPage() {
       <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit mb-6">
         <button
           onClick={() => handleTabChange("Pending")}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-            activeTab === "Pending"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900"
-          }`}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === "Pending"
+            ? "bg-white text-gray-900 shadow-sm"
+            : "text-gray-500 hover:text-gray-900"
+            }`}
         >
           Pending Requests
           {activeTab !== "Pending" && (
@@ -71,11 +70,10 @@ export default function ApprovalsPage() {
         </button>
         <button
           onClick={() => handleTabChange("History")}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-            activeTab === "History"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900"
-          }`}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === "History"
+            ? "bg-white text-gray-900 shadow-sm"
+            : "text-gray-500 hover:text-gray-900"
+            }`}
         >
           History
         </button>
@@ -134,15 +132,15 @@ export default function ApprovalsPage() {
                         <td className="px-6 py-4 text-gray-600 font-medium">
                           {request.approvalChain.length > 0
                             ? getUserName(
-                                request.approvalChain[
-                                  request.approvalChain.length - 1
-                                ].approverId
-                              )
+                              request.approvalChain[
+                                request.approvalChain.length - 1
+                              ].approverId
+                            )
                             : "Direct"}
                         </td>
                         <td className="px-6 py-4">{request.type}</td>
                         <td className="px-6 py-4">
-                          {request.daysCalculated}{" "}
+                          {formatDuration(request.daysCalculated)}{" "}
                           {request.type === "Short" ? "Hrs" : "Days"}
                         </td>
                         <td className="px-6 py-4 text-gray-500">
@@ -172,7 +170,7 @@ export default function ApprovalsPage() {
                         </td>
                         <td className="px-6 py-4">{request.type}</td>
                         <td className="px-6 py-4">
-                          {request.daysCalculated}{" "}
+                          {formatDuration(request.daysCalculated)}{" "}
                           {request.type === "Short" ? "Hrs" : "Days"}
                         </td>
                         <td className="px-6 py-4 text-gray-500">
@@ -181,11 +179,10 @@ export default function ApprovalsPage() {
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
                             <span
-                              className={`font-medium ${
-                                myAction?.status === "Approved"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
+                              className={`font-medium ${myAction?.status === "Approved" || myAction?.status === "Recommended"
+                                ? "text-green-600"
+                                : "text-red-600"
+                                }`}
                             >
                               {myAction?.status}
                             </span>

@@ -9,3 +9,7 @@ export const formatDate = (dateInput: string | Date | undefined | null): string 
 
     return `${day}-${month}-${year}`;
 };
+
+export const formatDuration = (value: number): string => {
+    return Number(value.toFixed(2)).toString();
+};

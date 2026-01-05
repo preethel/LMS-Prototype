@@ -3,7 +3,7 @@
 import ApplyLeaveModal from "@/components/Dashboard/ApplyLeaveModal";
 import StatCard from "@/components/Dashboard/StatCard";
 import { useLMS } from "@/context/LMSContext";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDuration } from "@/lib/utils";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -79,18 +79,18 @@ export default function Dashboard() {
           value={
             myBalance
               ? (() => {
-                  const totalQuotaHours = myBalance.totalDays * 8;
-                  const usedHoursTotal =
-                    (myBalance.usedDays || 0) * 8 + (myBalance.usedHours || 0);
-                  const remainingHours = totalQuotaHours - usedHoursTotal;
+                const totalQuotaHours = myBalance.totalDays * 8;
+                const usedHoursTotal =
+                  (myBalance.usedDays || 0) * 8 + (myBalance.usedHours || 0);
+                const remainingHours = totalQuotaHours - usedHoursTotal;
 
-                  const rDays = Math.floor(remainingHours / 8);
-                  const rHrs = remainingHours % 8;
+                const rDays = Math.floor(remainingHours / 8);
+                const rHrs = remainingHours % 8;
 
-                  return rHrs > 0
-                    ? `${rDays} Days ${rHrs} Hrs`
-                    : `${rDays} Days`;
-                })()
+                return rHrs > 0
+                  ? `${formatDuration(rDays)} Days ${formatDuration(rHrs)} Hrs`
+                  : `${formatDuration(rDays)} Days`;
+              })()
               : "0"
           }
           subtext="Available Balance"
@@ -100,12 +100,12 @@ export default function Dashboard() {
           value={
             myBalance
               ? (() => {
-                  const usedDays = myBalance.usedDays || 0;
-                  const usedHrs = myBalance.usedHours || 0;
-                  return usedHrs > 0
-                    ? `${usedDays} Days ${usedHrs} Hrs`
-                    : `${usedDays} Days`;
-                })()
+                const usedDays = myBalance.usedDays || 0;
+                const usedHrs = myBalance.usedHours || 0;
+                return usedHrs > 0
+                  ? `${formatDuration(usedDays)} Days ${formatDuration(usedHrs)} Hrs`
+                  : `${formatDuration(usedDays)} Days`;
+              })()
               : "0"
           }
           subtext="Consumed to Date"
@@ -156,15 +156,15 @@ export default function Dashboard() {
                       <td className="px-6 py-4 text-gray-600 font-medium text-xs">
                         {request.approvalChain.length > 0
                           ? getUserName(
-                              request.approvalChain[
-                                request.approvalChain.length - 1
-                              ].approverId
-                            )
+                            request.approvalChain[
+                              request.approvalChain.length - 1
+                            ].approverId
+                          )
                           : "Direct"}
                       </td>
                       <td className="px-6 py-4">{request.type}</td>
                       <td className="px-6 py-4">
-                        {request.daysCalculated}{" "}
+                        {formatDuration(request.daysCalculated)}{" "}
                         {request.type === "Short" ? "Hrs" : "Days"}
                       </td>
                       <td className="px-6 py-4 text-gray-500">
@@ -239,11 +239,11 @@ export default function Dashboard() {
                       {leave.startDate === leave.endDate
                         ? formatDate(leave.startDate)
                         : `${formatDate(leave.startDate)} to ${formatDate(
-                            leave.endDate
-                          )}`}
+                          leave.endDate
+                        )}`}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
-                      {leave.daysCalculated}{" "}
+                      {formatDuration(leave.daysCalculated)}{" "}
                       {leave.type === "Short" ? "Hrs" : "Days"}
                     </td>
                     <td className="px-6 py-4">

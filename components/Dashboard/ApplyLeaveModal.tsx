@@ -3,7 +3,8 @@
 import { useLMS } from "@/context/LMSContext";
 import { useNotification } from "@/context/NotificationContext";
 import { LeaveNature, LeaveType } from "@/lib/types";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
+import { formatDate } from "@/lib/utils";
 
 interface ApplyLeaveModalProps {
   isOpen: boolean;
@@ -179,6 +180,56 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
     onClose();
   };
 
+  const DateInput = ({
+    label,
+    value,
+    onChange,
+    min,
+    required,
+  }: {
+    label: string;
+    value: string;
+    onChange: (val: string) => void;
+    min?: string;
+    required?: boolean;
+  }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    return (
+      <div className="relative">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label}
+        </label>
+        <div
+          onClick={() => inputRef.current?.showPicker()}
+          className="relative cursor-pointer"
+        >
+          <input
+            type="text"
+            readOnly
+            value={value ? formatDate(value) : ""}
+            placeholder="DD-MM-YYYY"
+            required={required}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all cursor-pointer bg-white"
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            📅
+          </div>
+          <input
+            ref={inputRef}
+            type="date"
+            required={required}
+            value={value}
+            min={min}
+            onChange={(e) => onChange(e.target.value)}
+            className="absolute inset-0 opacity-0 cursor-pointer pointer-events-none"
+            tabIndex={-1}
+          />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -228,9 +279,8 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
                     className="text-indigo-600 focus:ring-indigo-500"
                   />
                   <span
-                    className={`font-medium ${
-                      type === "Regular" ? "text-indigo-700" : "text-gray-600"
-                    }`}
+                    className={`font-medium ${type === "Regular" ? "text-indigo-700" : "text-gray-600"
+                      }`}
                   >
                     Regular Leave (Days)
                   </span>
@@ -247,9 +297,8 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
                     className="text-indigo-600 focus:ring-indigo-500"
                   />
                   <span
-                    className={`font-medium ${
-                      type === "Short" ? "text-indigo-700" : "text-gray-600"
-                    }`}
+                    className={`font-medium ${type === "Short" ? "text-indigo-700" : "text-gray-600"
+                      }`}
                   >
                     Short Leave (Hours)
                   </span>
@@ -288,32 +337,23 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
             )}
 
             <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  From Date
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                />
-              </div>
+              <DateInput
+                label="From Date"
+                value={startDate}
+                onChange={(val) => {
+                  setStartDate(val);
+                  if (type === "Short") setEndDate(val);
+                }}
+                required
+              />
               {type === "Regular" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    To Date
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    min={startDate}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                  />
-                </div>
+                <DateInput
+                  label="To Date"
+                  value={endDate}
+                  onChange={setEndDate}
+                  min={startDate}
+                  required
+                />
               )}
             </div>
 

@@ -3,7 +3,7 @@
 import { useLMS } from "@/context/LMSContext";
 import Link from "next/link";
 import { useState } from "react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDuration } from "@/lib/utils";
 
 export default function MyApplicationsPage() {
   const { currentUser, leaves, cancelLeave } = useLMS();
@@ -82,7 +82,7 @@ export default function MyApplicationsPage() {
                         : `${formatDate(leave.startDate)} to ${formatDate(leave.endDate)}`}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
-                      {leave.daysCalculated}{" "}
+                      {formatDuration(leave.daysCalculated)}{" "}
                       {leave.type === "Short" ? "Hrs" : "Days"}
                     </td>
                     <td className="px-6 py-4">

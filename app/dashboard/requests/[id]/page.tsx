@@ -4,7 +4,7 @@ import AttachmentsModal from "@/components/Dashboard/AttachmentsModal";
 import EmployeeHistoryModal from "@/components/Dashboard/EmployeeHistoryModal";
 import { useLMS } from "@/context/LMSContext";
 import { useNotification } from "@/context/NotificationContext";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDuration } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { use, useState } from "react";
 
@@ -106,15 +106,15 @@ export default function LeaveRequestDetails({
       title: string;
       date?: string;
       status:
-        | "Calculated"
-        | "Pending"
-        | "Upcoming"
-        | "Approved"
-        | "Rejected"
-        | "Skipped"
-        | "Recommended"
-        | "Not Recommended"
-        | "Applied";
+      | "Calculated"
+      | "Pending"
+      | "Upcoming"
+      | "Approved"
+      | "Rejected"
+      | "Skipped"
+      | "Recommended"
+      | "Not Recommended"
+      | "Applied";
       actor?: string;
       role?: string;
       remarks?: string;
@@ -207,14 +207,14 @@ export default function LeaveRequestDetails({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Approved":
+      case "Recommended":
         return "bg-green-100 text-green-700 border-green-200";
       case "Rejected":
+      case "Not Recommended":
         return "bg-red-100 text-red-700 border-red-200";
       case "Pending":
         return "bg-orange-100 text-orange-700 border-orange-200";
       case "Skipped":
-      case "Recommended":
-      case "Not Recommended":
         return "bg-gray-100 text-gray-700 border-gray-200";
       case "Applied":
         return "bg-blue-100 text-blue-700 border-blue-200";
@@ -228,15 +228,13 @@ export default function LeaveRequestDetails({
       case "Applied":
         return "bg-blue-500";
       case "Approved":
+      case "Recommended":
         return "bg-green-500";
       case "Rejected":
+      case "Not Recommended":
         return "bg-red-500";
       case "Skipped":
         return "bg-gray-400";
-      case "Recommended":
-        return "bg-teal-500";
-      case "Not Recommended":
-        return "bg-orange-500";
       case "Pending":
         return "bg-orange-500 animate-pulse";
       default:
@@ -335,7 +333,7 @@ export default function LeaveRequestDetails({
                   Duration
                 </label>
                 <p className="text-lg font-medium text-indigo-600">
-                  {request.daysCalculated}{" "}
+                  {formatDuration(request.daysCalculated)}{" "}
                   {request.type === "Short" ? "Hours" : "Days"}
                 </p>
               </div>
@@ -393,7 +391,7 @@ export default function LeaveRequestDetails({
                         type="number"
                         min="0"
                         max={request.daysCalculated}
-                        value={request.unpaidLeaveDays || 0}
+                        value={formatDuration(request.unpaidLeaveDays || 0)}
                         onChange={(e) =>
                           updateUnpaidLeaveDays(
                             request.id,
@@ -403,7 +401,7 @@ export default function LeaveRequestDetails({
                         className="w-24 text-center px-3 py-2 border border-gray-200 rounded-lg text-lg font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all hover:border-gray-300"
                       />
                       <span className="text-gray-400 font-medium">
-                        / {request.daysCalculated}
+                        / {formatDuration(request.daysCalculated)}
                       </span>
                     </div>
                   </div>
@@ -437,20 +435,19 @@ export default function LeaveRequestDetails({
                         <button
                           onClick={handleApprove}
                           disabled={hasProcessed.status === "Approved"}
-                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
-                            hasProcessed.status === "Approved"
-                              ? "bg-green-50 text-green-300 cursor-not-allowed border border-green-100"
-                              : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
-                          }`}
+                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${hasProcessed.status === "Approved"
+                            ? "bg-green-50 text-green-300 cursor-not-allowed border border-green-100"
+                            : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
+                            }`}
                         >
                           {hasProcessed.status === "Approved" ||
-                          hasProcessed.status === "Recommended"
+                            hasProcessed.status === "Recommended"
                             ? isFinalAuthority
                               ? "Approved"
                               : "Recommended"
                             : isFinalAuthority
-                            ? "Change to Approve"
-                            : "Change to Recommend"}
+                              ? "Change to Approve"
+                              : "Change to Recommend"}
                         </button>
                         <button
                           onClick={handleReject}
@@ -458,26 +455,25 @@ export default function LeaveRequestDetails({
                             hasProcessed.status === "Rejected" ||
                             hasProcessed.status === "Not Recommended"
                           }
-                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
-                            hasProcessed.status === "Rejected" ||
+                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${hasProcessed.status === "Rejected" ||
                             hasProcessed.status === "Not Recommended"
-                              ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
-                              : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
-                          }`}
+                            ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
+                            : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
+                            }`}
                         >
                           {hasProcessed.status === "Rejected" ||
-                          hasProcessed.status === "Not Recommended"
+                            hasProcessed.status === "Not Recommended"
                             ? isFinalAuthority
                               ? "Rejected"
                               : "Not Recommended"
                             : isFinalAuthority
-                            ? "Change to Reject"
-                            : "Change to Not Recommend"}
+                              ? "Change to Reject"
+                              : "Change to Not Recommend"}
                         </button>
                       </>
                     ) : (
                       <>
-                        {isFinalAuthority && !hasProcessed?.status ? (
+                        {isFinalAuthority && !hasProcessed ? (
                           <>
                             {/* HR/Admin Special Actions */}
                             <button
@@ -600,14 +596,14 @@ export default function LeaveRequestDetails({
 
                     return (
                       <>
-                        {displayDays}
+                        {formatDuration(displayDays)}
                         <span className="text-2xl font-normal text-indigo-300 ml-1">
                           Days
                         </span>
                         {displayHours > 0 && (
                           <>
                             {" "}
-                            {displayHours}
+                            {formatDuration(displayHours)}
                             <span className="text-2xl font-normal text-indigo-300 ml-1">
                               Hours
                             </span>
@@ -621,9 +617,9 @@ export default function LeaveRequestDetails({
                   </div>
                 </div>
                 <p className="text-indigo-200 text-sm mt-2 opacity-80">
-                  Total Quota: {requesterBalance?.totalDays} Days • Used:{" "}
-                  {requesterBalance?.usedDays || 0} Days +{" "}
-                  {requesterBalance?.usedHours || 0} Hours
+                  Total Quota: {formatDuration(requesterBalance?.totalDays || 0)} Days • Used:{" "}
+                  {formatDuration(requesterBalance?.usedDays || 0)} Days +{" "}
+                  {formatDuration(requesterBalance?.usedHours || 0)} Hours
                 </p>
               </div>
               <button
