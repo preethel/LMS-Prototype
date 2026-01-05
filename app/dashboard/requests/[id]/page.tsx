@@ -240,6 +240,15 @@ export default function LeaveRequestDetails({
             >
               {request.status}
             </span>
+            {hasProcessed && (
+              <span
+                className={`px-3 py-1.5 rounded-full text-xs font-bold border ml-2 ${getStatusColor(
+                  hasProcessed.status
+                )}`}
+              >
+                My Decision: {hasProcessed.status}
+              </span>
+            )}
           </div>
           <p className="text-gray-500 mt-1">
             Request ID:{" "}

@@ -3,12 +3,19 @@
 import { useLMS } from "@/context/LMSContext";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export default function ApprovalsPage() {
   const { currentUser, getPendingApprovals, getApprovalHistory, users } =
     useLMS();
-  const [activeTab, setActiveTab] = useState<"Pending" | "History">("Pending");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const activeTab =
+    (searchParams.get("tab") as "Pending" | "History") || "Pending";
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -17,20 +24,6 @@ export default function ApprovalsPage() {
   // Helper: Get user name
   const getUserName = (userId: string) =>
     users.find((u) => u.id === userId)?.name || "Unknown User";
-
-  // Helper to colorize status
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return "bg-green-100 text-green-800";
-      case "Rejected":
-        return "bg-red-100 text-red-800";
-      case "Pending":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   // Data Source
   let data = [];
@@ -49,7 +42,9 @@ export default function ApprovalsPage() {
   const currentItems = data.slice(startIndex, startIndex + itemsPerPage);
 
   const handleTabChange = (tab: "Pending" | "History") => {
-    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", tab);
+    router.push(`${pathname}?${params.toString()}`);
     setCurrentPage(1);
   };
 
