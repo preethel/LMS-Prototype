@@ -1,9 +1,9 @@
 "use client";
 
 import { useLMS } from "@/context/LMSContext";
+import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { useState } from "react";
-import { formatDate } from "@/lib/utils";
 
 export default function ApprovalsPage() {
   const { currentUser, getPendingApprovals, getApprovalHistory, users } =
@@ -61,10 +61,11 @@ export default function ApprovalsPage() {
       <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit mb-6">
         <button
           onClick={() => handleTabChange("Pending")}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === "Pending"
-            ? "bg-white text-gray-900 shadow-sm"
-            : "text-gray-500 hover:text-gray-900"
-            }`}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+            activeTab === "Pending"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900"
+          }`}
         >
           Pending Requests
           {activeTab !== "Pending" && (
@@ -75,10 +76,11 @@ export default function ApprovalsPage() {
         </button>
         <button
           onClick={() => handleTabChange("History")}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === "History"
-            ? "bg-white text-gray-900 shadow-sm"
-            : "text-gray-500 hover:text-gray-900"
-            }`}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+            activeTab === "History"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900"
+          }`}
         >
           History
         </button>
@@ -137,10 +139,10 @@ export default function ApprovalsPage() {
                         <td className="px-6 py-4 text-gray-600 font-medium">
                           {request.approvalChain.length > 0
                             ? getUserName(
-                              request.approvalChain[
-                                request.approvalChain.length - 1
-                              ].approverId
-                            )
+                                request.approvalChain[
+                                  request.approvalChain.length - 1
+                                ].approverId
+                              )
                             : "Direct"}
                         </td>
                         <td className="px-6 py-4">{request.type}</td>
@@ -156,7 +158,7 @@ export default function ApprovalsPage() {
                             href={`/dashboard/requests/${request.id}`}
                             className="text-indigo-600 hover:text-indigo-800 font-semibold text-xs border border-indigo-200 px-3 py-1.5 rounded transition-colors"
                           >
-                            Review
+                            Review Request
                           </Link>
                         </td>
                       </tr>
@@ -184,10 +186,11 @@ export default function ApprovalsPage() {
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
                             <span
-                              className={`font-medium ${myAction?.status === "Approved"
-                                ? "text-green-600"
-                                : "text-red-600"
-                                }`}
+                              className={`font-medium ${
+                                myAction?.status === "Approved"
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
                             >
                               {myAction?.status}
                             </span>

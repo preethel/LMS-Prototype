@@ -3,9 +3,9 @@
 import ApplyLeaveModal from "@/components/Dashboard/ApplyLeaveModal";
 import StatCard from "@/components/Dashboard/StatCard";
 import { useLMS } from "@/context/LMSContext";
+import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { useState } from "react";
-import { formatDate } from "@/lib/utils";
 
 export default function Dashboard() {
   const {
@@ -78,8 +78,9 @@ export default function Dashboard() {
           title="Remaining"
           value={
             myBalance
-              ? `${myBalance.totalDays - myBalance.usedDays} Days ${myBalance.totalHours - (myBalance.usedHours || 0)
-              } Hrs`
+              ? `${myBalance.totalDays - myBalance.usedDays} Days ${
+                  myBalance.totalHours - (myBalance.usedHours || 0)
+                } Hrs`
               : "0"
           }
           subtext="Available Balance"
@@ -139,10 +140,10 @@ export default function Dashboard() {
                       <td className="px-6 py-4 text-gray-600 font-medium text-xs">
                         {request.approvalChain.length > 0
                           ? getUserName(
-                            request.approvalChain[
-                              request.approvalChain.length - 1
-                            ].approverId
-                          )
+                              request.approvalChain[
+                                request.approvalChain.length - 1
+                              ].approverId
+                            )
                           : "Direct"}
                       </td>
                       <td className="px-6 py-4">{request.type}</td>
@@ -221,7 +222,9 @@ export default function Dashboard() {
                     <td className="px-6 py-4 text-gray-600">
                       {leave.startDate === leave.endDate
                         ? formatDate(leave.startDate)
-                        : `${formatDate(leave.startDate)} to ${formatDate(leave.endDate)}`}
+                        : `${formatDate(leave.startDate)} to ${formatDate(
+                            leave.endDate
+                          )}`}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       {leave.daysCalculated}{" "}

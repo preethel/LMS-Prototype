@@ -3,8 +3,8 @@
 import AttachmentsModal from "@/components/Dashboard/AttachmentsModal";
 import EmployeeHistoryModal from "@/components/Dashboard/EmployeeHistoryModal";
 import { useLMS } from "@/context/LMSContext";
-import { useRouter, useSearchParams } from "next/navigation";
 import { formatDate } from "@/lib/utils";
+import { useRouter, useSearchParams } from "next/navigation";
 import { use, useState } from "react";
 
 export default function LeaveRequestDetails({
@@ -80,15 +80,15 @@ export default function LeaveRequestDetails({
       title: string;
       date?: string;
       status:
-      | "Calculated"
-      | "Pending"
-      | "Upcoming"
-      | "Approved"
-      | "Rejected"
-      | "Skipped"
-      | "Recommended"
-      | "Not Recommended"
-      | "Applied";
+        | "Calculated"
+        | "Pending"
+        | "Upcoming"
+        | "Approved"
+        | "Rejected"
+        | "Skipped"
+        | "Recommended"
+        | "Not Recommended"
+        | "Applied";
       actor?: string;
       role?: string;
       remarks?: string;
@@ -227,7 +227,7 @@ export default function LeaveRequestDetails({
             onClick={() => router.back()}
             className="mb-2 text-sm text-gray-400 hover:text-gray-900 transition-colors flex items-center gap-1"
           >
-            ← Back to Dashboard
+            ← Back
           </button>
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-bold text-gray-900">
@@ -379,10 +379,16 @@ export default function LeaveRequestDetails({
             {(!isReadOnly || hasProcessed) && (
               <div className="p-5 bg-gray-50 border-t border-gray-100">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  {hasProcessed && isReadOnly ? "My Remarks" : "Remarks (Optional)"}
+                  {hasProcessed && isReadOnly
+                    ? "My Remarks"
+                    : "Remarks (Optional)"}
                 </label>
                 <textarea
-                  value={hasProcessed && isReadOnly ? hasProcessed.remarks || "" : remarks}
+                  value={
+                    hasProcessed && isReadOnly
+                      ? hasProcessed.remarks || ""
+                      : remarks
+                  }
                   onChange={(e) => setRemarks(e.target.value)}
                   placeholder="Add a note..."
                   disabled={!!(hasProcessed && isReadOnly)}
@@ -396,19 +402,20 @@ export default function LeaveRequestDetails({
                         <button
                           onClick={handleApprove}
                           disabled={hasProcessed.status === "Approved"}
-                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${hasProcessed.status === "Approved"
-                            ? "bg-green-50 text-green-300 cursor-not-allowed border border-green-100"
-                            : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
-                            }`}
+                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
+                            hasProcessed.status === "Approved"
+                              ? "bg-green-50 text-green-300 cursor-not-allowed border border-green-100"
+                              : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
+                          }`}
                         >
                           {hasProcessed.status === "Approved" ||
-                            hasProcessed.status === "Recommended"
+                          hasProcessed.status === "Recommended"
                             ? isFinalAuthority
                               ? "Approved"
                               : "Recommended"
                             : isFinalAuthority
-                              ? "Change to Approve"
-                              : "Change to Recommend"}
+                            ? "Change to Approve"
+                            : "Change to Recommend"}
                         </button>
                         <button
                           onClick={handleReject}
@@ -416,20 +423,21 @@ export default function LeaveRequestDetails({
                             hasProcessed.status === "Rejected" ||
                             hasProcessed.status === "Not Recommended"
                           }
-                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${hasProcessed.status === "Rejected" ||
+                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
+                            hasProcessed.status === "Rejected" ||
                             hasProcessed.status === "Not Recommended"
-                            ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
-                            : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
-                            }`}
+                              ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
+                              : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
+                          }`}
                         >
                           {hasProcessed.status === "Rejected" ||
-                            hasProcessed.status === "Not Recommended"
+                          hasProcessed.status === "Not Recommended"
                             ? isFinalAuthority
                               ? "Rejected"
                               : "Not Recommended"
                             : isFinalAuthority
-                              ? "Change to Reject"
-                              : "Change to Not Recommend"}
+                            ? "Change to Reject"
+                            : "Change to Not Recommend"}
                         </button>
                       </>
                     ) : (
@@ -474,9 +482,9 @@ export default function LeaveRequestDetails({
                 <div className="text-4xl font-bold">
                   {request.type === "Short"
                     ? (requesterBalance?.totalHours || 0) -
-                    (requesterBalance?.usedHours || 0)
+                      (requesterBalance?.usedHours || 0)
                     : (requesterBalance?.totalDays || 0) -
-                    (requesterBalance?.usedDays || 0)}{" "}
+                      (requesterBalance?.usedDays || 0)}{" "}
                   <span className="text-lg text-indigo-300 font-normal">
                     Remaining
                   </span>
@@ -525,9 +533,7 @@ export default function LeaveRequestDetails({
                     {/* Card Content */}
                     <div className="transition-all hover:translate-x-1">
                       <p className="text-xs font-bold text-gray-400 uppercase mb-0.5">
-                        {event.date
-                          ? formatDate(event.date)
-                          : "Expected"}
+                        {event.date ? formatDate(event.date) : "Expected"}
                       </p>
                       <h4 className="text-sm font-bold text-gray-900">
                         {event.title}
