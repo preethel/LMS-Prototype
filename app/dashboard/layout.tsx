@@ -1,7 +1,9 @@
 "use client";
 
+import Header from "@/components/Layout/Header";
 import Sidebar from "@/components/Layout/Sidebar";
 import { useLMS } from "@/context/LMSContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -22,11 +24,16 @@ export default function DashboardLayout({
   if (!currentUser) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 p-8 overflow-y-auto h-screen">
-        <div className="max-w-5xl mx-auto">{children}</div>
-      </main>
-    </div>
+    <NotificationProvider>
+      <div className="flex min-h-screen bg-gray-50">
+        <Sidebar />
+        <main className="flex-1 flex flex-col h-screen overflow-hidden">
+          <Header />
+          <div className="flex-1 overflow-y-auto p-8">
+            <div className="max-w-5xl mx-auto">{children}</div>
+          </div>
+        </main>
+      </div>
+    </NotificationProvider>
   );
 }

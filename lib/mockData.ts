@@ -1,5 +1,39 @@
 import { LeaveBalance, LeaveRequest, User } from './types';
 
+export interface Notification {
+    id: string;
+    userId: string; // The user receiving the notification
+    title: string;
+    message: string;
+    type: 'info' | 'success' | 'warning' | 'error';
+    link?: string; // URL to navigate to
+    isRead: boolean;
+    createdAt: string;
+}
+
+export const MOCK_NOTIFICATIONS: Notification[] = [
+    {
+        id: 'n1',
+        userId: 'u1',
+        title: 'Leave Approved',
+        message: 'Your leave request for Sick Leave (Jan 10 - Jan 12) has been approved by Sarah Lead.',
+        type: 'success',
+        link: '/dashboard/requests/l1',
+        isRead: false,
+        createdAt: '2024-01-06T10:05:00Z'
+    },
+    {
+        id: 'n2',
+        userId: 'u2',
+        title: 'New Leave Request',
+        message: 'John Junior has applied for Sick Leave (Jan 10 - Jan 12).',
+        type: 'info',
+        link: '/dashboard/requests/l1',
+        isRead: true,
+        createdAt: '2024-01-05T09:05:00Z'
+    }
+];
+
 // Hierarchy:
 // Employee (Dev) -> Team Lead -> Manager -> Director
 

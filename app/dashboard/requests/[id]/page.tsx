@@ -3,6 +3,7 @@
 import AttachmentsModal from "@/components/Dashboard/AttachmentsModal";
 import EmployeeHistoryModal from "@/components/Dashboard/EmployeeHistoryModal";
 import { useLMS } from "@/context/LMSContext";
+import { useNotification } from "@/context/NotificationContext";
 import { formatDate } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { use, useState } from "react";
@@ -23,6 +24,7 @@ export default function LeaveRequestDetails({
     skipLeave,
     updateUnpaidLeaveDays,
   } = useLMS();
+  const { addNotification } = useNotification();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isReadOnly = searchParams.get("readOnly") === "true";
@@ -57,6 +59,18 @@ export default function LeaveRequestDetails({
     } else {
       approveLeave(request.userId, request.id, currentUser.id, remarks);
     }
+
+    // Notify Requester
+    if (requester && requester.id !== currentUser.id) {
+      addNotification({
+        userId: requester.id,
+        title: "Leave Request Updated",
+        message: `Your leave request has been marked as Approved by ${currentUser.name}.`,
+        type: "success",
+        link: `/dashboard/requests/${request.id}`,
+      });
+    }
+
     router.push("/dashboard");
   };
 
@@ -66,6 +80,18 @@ export default function LeaveRequestDetails({
     } else {
       rejectLeave(request.id, currentUser.id, remarks);
     }
+
+    // Notify Requester
+    if (requester && requester.id !== currentUser.id) {
+      addNotification({
+        userId: requester.id,
+        title: "Leave Request Rejected",
+        message: `Your leave request has been Rejected by ${currentUser.name}.`,
+        type: "error",
+        link: `/dashboard/requests/${request.id}`,
+      });
+    }
+
     router.push("/dashboard");
   };
 

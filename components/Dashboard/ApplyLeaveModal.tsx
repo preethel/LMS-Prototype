@@ -1,6 +1,6 @@
 "use client";
 
-import { useLMS } from "@/context/LMSContext";
+import { useNotification } from "@/context/NotificationContext";
 import { LeaveNature, LeaveType } from "@/lib/types";
 import { useMemo, useState } from "react";
 
@@ -10,7 +10,8 @@ interface ApplyLeaveModalProps {
 }
 
 function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
-  const { currentUser, applyLeave, balances } = useLMS();
+  const { currentUser, applyLeave, balances, users } = useLMS();
+  const { addNotification } = useNotification();
 
   const [type, setType] = useState<LeaveType>("Regular");
   const [nature, setNature] = useState<LeaveNature | "">("Casual");
@@ -123,6 +124,8 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
       url: URL.createObjectURL(file), // Mock URL for blob
     }));
 
+    // Perform Application
+    // Note: applyLeave is void, we assume success for prototype
     applyLeave(
       currentUser.id,
       type,
@@ -134,6 +137,43 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
       type === "Short" ? { start: startTime, end: endTime } : undefined,
       attachments
     );
+
+    // --- Notification Logic ---
+
+    // 1. Notify Applicant (Self)
+    addNotification({
+      userId: currentUser.id,
+      title: "Application Submitted",
+      message: `Your ${type} leave application has been submitted successfully.`,
+      type: "success",
+      link: "/dashboard/my-applications",
+    });
+
+    // 2. Notify Approver
+    if (currentUser.approver) {
+      addNotification({
+        userId: currentUser.approver,
+        title: "New Leave Request",
+        message: `${currentUser.name} has applied for ${type} leave.`,
+        type: "info",
+        link: "/dashboard/approvals", // Or link to specific request if we had the ID returned
+      });
+    }
+
+    // 3. Notify HR
+    const hrUsers = users.filter((u) => u.role === "HR");
+    hrUsers.forEach((hr) => {
+      // Avoid duplicate if HR is also the approver (unlikely but possible)
+      if (hr.id !== currentUser.approver) {
+        addNotification({
+          userId: hr.id,
+          title: "New Leave Request",
+          message: `${currentUser.name} has applied for ${type} leave.`,
+          type: "info",
+          link: "/dashboard/approvals",
+        });
+      }
+    });
 
     onClose();
   };
