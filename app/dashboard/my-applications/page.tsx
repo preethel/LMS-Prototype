@@ -1,15 +1,13 @@
 "use client";
 
 import { useLMS } from "@/context/LMSContext";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import { formatDate } from "@/lib/utils";
 
 export default function MyApplicationsPage() {
   const { currentUser, leaves, cancelLeave } = useLMS();
-  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const itemsPerPage = 10;
 
   if (!currentUser) return null;
@@ -52,13 +50,14 @@ export default function MyApplicationsPage() {
                 <th className="px-6 py-3">Result</th>
                 <th className="px-6 py-3">Status</th>
                 <th className="px-6 py-3">Action</th>
+                <th className="px-6 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {currentLeaves.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-6 py-8 text-center text-gray-400"
                   >
                     No applications found.
@@ -68,12 +67,7 @@ export default function MyApplicationsPage() {
                 currentLeaves.map((leave) => (
                   <tr
                     key={leave.id}
-                    onClick={() => setSelectedId(leave.id)}
-                    onDoubleClick={() => router.push(`/dashboard/requests/${leave.id}?readOnly=true`)}
-                    className={`cursor-pointer transition-colors ${selectedId === leave.id
-                      ? "bg-indigo-50 border-l-4 border-indigo-500"
-                      : "hover:bg-gray-50/50 border-l-4 border-transparent"
-                      }`}
+                    className="hover:bg-gray-50/50 transition-colors"
                   >
                     <td className="px-6 py-4 font-medium text-gray-900">
                       {leave.type}
@@ -110,6 +104,14 @@ export default function MyApplicationsPage() {
                           Cancel
                         </button>
                       )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Link
+                        href={`/dashboard/requests/${leave.id}?readOnly=true`}
+                        className="text-indigo-600 hover:text-indigo-800 font-semibold text-xs border border-indigo-200 px-3 py-1.5 rounded transition-colors"
+                      >
+                        Details
+                      </Link>
                     </td>
                   </tr>
                 ))
