@@ -78,9 +78,8 @@ export default function Dashboard() {
           title="Remaining"
           value={
             myBalance
-              ? `${myBalance.totalDays - myBalance.usedDays} Days ${
-                  myBalance.totalHours - (myBalance.usedHours || 0)
-                } Hrs`
+              ? `${myBalance.totalDays - myBalance.usedDays} Days ${myBalance.totalHours - (myBalance.usedHours || 0)
+              } Hrs`
               : "0"
           }
           subtext="Available Balance"
@@ -140,10 +139,10 @@ export default function Dashboard() {
                       <td className="px-6 py-4 text-gray-600 font-medium text-xs">
                         {request.approvalChain.length > 0
                           ? getUserName(
-                              request.approvalChain[
-                                request.approvalChain.length - 1
-                              ].approverId
-                            )
+                            request.approvalChain[
+                              request.approvalChain.length - 1
+                            ].approverId
+                          )
                           : "Direct"}
                       </td>
                       <td className="px-6 py-4">{request.type}</td>
@@ -223,8 +222,8 @@ export default function Dashboard() {
                       {leave.startDate === leave.endDate
                         ? formatDate(leave.startDate)
                         : `${formatDate(leave.startDate)} to ${formatDate(
-                            leave.endDate
-                          )}`}
+                          leave.endDate
+                        )}`}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       {leave.daysCalculated}{" "}
@@ -240,10 +239,16 @@ export default function Dashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
+                      <Link
+                        href={`/dashboard/requests/${leave.id}?readOnly=true`}
+                        className="text-indigo-600 hover:text-indigo-800 font-semibold text-xs border border-indigo-200 px-3 py-1.5 rounded transition-colors"
+                      >
+                        Details
+                      </Link>
                       {["Pending", "Approved"].includes(leave.status) && (
                         <button
                           onClick={() => cancelLeave(leave.id)}
-                          className="text-red-500 hover:text-red-700 text-xs font-medium border border-red-200 hover:border-red-400 px-2 py-1 rounded transition-colors"
+                          className="text-red-500 hover:text-red-700 text-xs font-medium border border-red-200 hover:border-red-400 px-2 py-1 rounded transition-colors ml-2"
                         >
                           Cancel
                         </button>
