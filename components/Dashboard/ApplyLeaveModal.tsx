@@ -1,5 +1,6 @@
 "use client";
 
+import { useLMS } from "@/context/LMSContext";
 import { useNotification } from "@/context/NotificationContext";
 import { LeaveNature, LeaveType } from "@/lib/types";
 import { useMemo, useState } from "react";
