@@ -42,6 +42,7 @@ export const MOCK_USERS: User[] = [
         email: 'helen@company.com',
         designation: 'HR Manager',
         role: 'HR',
+        approver: 'u4', // Reports to Director
     },
     {
         id: 'u5',
@@ -116,54 +117,54 @@ export const MOCK_LEAVES: LeaveRequest[] = [
     {
         id: 'l8', userId: 'u1', type: 'Regular', nature: 'Casual', startDate: '2024-08-01', endDate: '2024-08-01',
         reason: 'Personal', status: 'Pending', daysCalculated: 1, createdAt: '2024-07-30T09:00:00Z',
-        currentApproverId: 'u2', approvalChain: []
+        currentApproverId: 'u6', approvalChain: []
     },
     {
         id: 'l9', userId: 'u1', type: 'Regular', nature: 'Casual', startDate: '2024-08-10', endDate: '2024-08-12',
         reason: 'Family event', status: 'Pending', daysCalculated: 3, createdAt: '2024-08-01T09:00:00Z',
-        currentApproverId: 'u2', approvalChain: []
+        currentApproverId: 'u6', approvalChain: []
     },
     {
         id: 'l10', userId: 'u1', type: 'Short', startDate: '2024-08-20', endDate: '2024-08-20',
         startTime: '09:00', endTime: '11:00', reason: 'Car service', status: 'Pending', daysCalculated: 2, createdAt: '2024-08-18T09:00:00Z',
-        currentApproverId: 'u2', approvalChain: []
+        currentApproverId: 'u6', approvalChain: []
     },
     {
         id: 'l11', userId: 'u1', type: 'Regular', nature: 'Casual', startDate: '2024-09-01', endDate: '2024-09-05',
         reason: 'Planned Trip', status: 'Pending', daysCalculated: 5, createdAt: '2024-08-25T09:00:00Z',
-        currentApproverId: 'u2', approvalChain: []
+        currentApproverId: 'u6', approvalChain: []
     },
     {
         id: 'l12', userId: 'u1', type: 'Regular', nature: 'Casual', startDate: '2024-10-01', endDate: '2024-10-01',
         reason: 'Wedding', status: 'Pending', daysCalculated: 1, createdAt: '2024-09-20T09:00:00Z',
-        currentApproverId: 'u2', approvalChain: []
+        currentApproverId: 'u6', approvalChain: []
     },
 
     // --- Approvals for U2 (Pending Requests from U1 and U5) ---
     {
         id: 'l13', userId: 'u5', type: 'Regular', nature: 'Sick', startDate: '2024-08-05', endDate: '2024-08-06',
         reason: 'Sick Leave', status: 'Pending', daysCalculated: 2, createdAt: '2024-08-04T09:00:00Z',
-        currentApproverId: 'u2', approvalChain: []
+        currentApproverId: 'u6', approvalChain: []
     },
     {
         id: 'l14', userId: 'u5', type: 'Short', startDate: '2024-08-08', endDate: '2024-08-08',
         startTime: '15:00', endTime: '17:00', reason: 'Early leave', status: 'Pending', daysCalculated: 2, createdAt: '2024-08-07T09:00:00Z',
-        currentApproverId: 'u2', approvalChain: []
+        currentApproverId: 'u6', approvalChain: []
     },
     {
         id: 'l15', userId: 'u5', type: 'Regular', nature: 'Casual', startDate: '2024-08-25', endDate: '2024-08-25',
         reason: 'Urgent', status: 'Pending', daysCalculated: 1, createdAt: '2024-08-24T09:00:00Z',
-        currentApproverId: 'u2', approvalChain: []
+        currentApproverId: 'u6', approvalChain: []
     },
     {
         id: 'l16', userId: 'u5', type: 'Regular', nature: 'Casual', startDate: '2024-09-10', endDate: '2024-09-12',
         reason: 'Vacation', status: 'Pending', daysCalculated: 3, createdAt: '2024-09-01T09:00:00Z',
-        currentApproverId: 'u2', approvalChain: []
+        currentApproverId: 'u6', approvalChain: []
     },
     {
         id: 'l17', userId: 'u5', type: 'Regular', nature: 'Casual', startDate: '2024-10-05', endDate: '2024-10-05',
         reason: 'Personal', status: 'Pending', daysCalculated: 1, createdAt: '2024-09-29T09:00:00Z',
-        currentApproverId: 'u2', approvalChain: []
+        currentApproverId: 'u6', approvalChain: []
     },
 
     // --- Approvals for U3 (Pending Requests from U2 - Sarah's Applications) ---

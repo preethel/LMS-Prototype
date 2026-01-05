@@ -10,7 +10,7 @@ export interface User {
     approver?: string; // ID of the next person in the hierarchy
     avatarUrl?: string;
     designation: string;
-    role: 'Employee' | 'TeamLead' | 'Manager' | 'HR' | 'MD';
+    role: 'Employee' | 'TeamLead' | 'Manager' | 'HR' | 'MD' | 'Director';
 }
 
 export interface LeaveBalance {

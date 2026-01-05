@@ -451,24 +451,78 @@ export default function LeaveRequestDetails({
                       </>
                     ) : (
                       <>
-                        <button
-                          onClick={handleApprove}
-                          className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
-                        >
-                          {isFinalAuthority ? "Approve" : "Recommend"}
-                        </button>
-                        <button
-                          onClick={handleReject}
-                          className="flex-1 bg-white text-red-600 border border-red-200 py-2.5 rounded-xl font-bold hover:bg-red-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
-                        >
-                          {isFinalAuthority ? "Reject" : "Not Recommend"}
-                        </button>
-                        <button
-                          onClick={handleSkip}
-                          className="px-6 py-2.5 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-all"
-                        >
-                          Forward
-                        </button>
+                        {isFinalAuthority && !hasProcessed?.status ? (
+                          <>
+                            {/* HR/Admin Special Actions */}
+                            <button
+                              onClick={() => {
+                                if (hasProcessed) {
+                                  editApproval(
+                                    request.id,
+                                    currentUser.id,
+                                    "Approved",
+                                    remarks
+                                  );
+                                } else {
+                                  approveLeave(
+                                    request.userId,
+                                    request.id,
+                                    currentUser.id,
+                                    remarks,
+                                    true // isFinalDecision = true
+                                  );
+                                }
+                                router.push("/dashboard");
+                              }}
+                              className="flex-1 bg-gradient-to-r from-green-600 to-green-500 text-white py-2.5 rounded-xl font-bold hover:from-green-700 hover:to-green-600 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
+                            >
+                              Approve & Finalize
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Forward to Director
+                                approveLeave(
+                                  request.userId,
+                                  request.id,
+                                  currentUser.id,
+                                  remarks,
+                                  false // isFinalDecision = false
+                                );
+                                router.push("/dashboard");
+                              }}
+                              className="flex-1 bg-white text-indigo-600 border border-indigo-200 py-2.5 rounded-xl font-bold hover:bg-indigo-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
+                            >
+                              Forward to Director
+                            </button>
+                            <button
+                              onClick={handleReject}
+                              className="px-6 py-2.5 bg-white text-red-600 border border-red-200 rounded-xl font-bold hover:bg-red-50 transition-all"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={handleApprove}
+                              className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
+                            >
+                              {isFinalAuthority ? "Approve" : "Recommend"}
+                            </button>
+                            <button
+                              onClick={handleReject}
+                              className="flex-1 bg-white text-red-600 border border-red-200 py-2.5 rounded-xl font-bold hover:bg-red-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
+                            >
+                              {isFinalAuthority ? "Reject" : "Not Recommend"}
+                            </button>
+                            <button
+                              onClick={handleSkip}
+                              className="px-6 py-2.5 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-all"
+                            >
+                              Forward
+                            </button>
+                          </>
+                        )}
                       </>
                     )}
                   </div>

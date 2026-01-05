@@ -33,7 +33,8 @@ interface LMSContextType {
     submiitedByUserId: string,
     leaveId: string,
     ApproverId: string,
-    remarks?: string
+    remarks?: string,
+    isFinalDecision?: boolean
   ) => void;
   rejectLeave: (leaveId: string, approverId: string, remarks?: string) => void;
   cancelLeave: (leaveId: string) => void;
@@ -123,7 +124,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
       endDate: end,
       reason,
       status: "Pending",
-      currentApproverId: user.approver, // First stop: Direct Approver
+      currentApproverId: user.approver,
       approvalChain: [],
       createdAt: new Date().toISOString(),
       daysCalculated: quantity,
@@ -140,16 +141,20 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     submittedUserId: string,
     leaveId: string,
     approverId: string,
-    remarks?: string
+    remarks?: string,
+    isFinalDecision?: boolean // New Parameter
   ) => {
     setLeaves((prev) =>
       prev.map((leave) => {
         if (leave.id !== leaveId) return leave;
 
         const currentApproverUser = users.find((u) => u.id === approverId);
+        // isFinalAuthority logic: If passed explicitly OR if role is MD/Director (who are implicitly final)
+        // HR is potentially final if they choose to be.
         const isFinalAuthority =
-          currentApproverUser?.role === "HR" ||
-          currentApproverUser?.role === "MD";
+          isFinalDecision ||
+          currentApproverUser?.role === "MD" ||
+          currentApproverUser?.role === "Director";
 
         // Determine Action Status
         const actionStatus = isFinalAuthority ? "Approved" : "Recommended";
@@ -175,7 +180,34 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
           };
         } else {
           // Move up hierarchy
-          const nextApproverId = currentApproverUser?.approver;
+          let nextApproverId: string | undefined;
+
+          // If current approver is HR, route to Director (forwarding means escalation)
+          if (currentApproverUser?.role === "HR") {
+            const director = users.find(
+              (u) => u.role === "Director" || u.role === "MD"
+            );
+            nextApproverId = director?.id;
+          } else {
+            nextApproverId = currentApproverUser?.approver;
+          }
+
+          // --- INTERCEPTION LOGIC ---
+          // If next is MD/Director, and current approver is NOT HR, route to HR first.
+          if (nextApproverId) {
+            const nextUser = users.find((u) => u.id === nextApproverId);
+            const isTargetMD =
+              nextUser?.role === "MD" || nextUser?.role === "Director";
+
+            if (isTargetMD && currentApproverUser?.role !== "HR") {
+              const hrUser = users.find((u) => u.role === "HR");
+              if (hrUser) {
+                nextApproverId = hrUser.id;
+              }
+            }
+          }
+          // --- END INTERCEPTION ---
+
           if (nextApproverId) {
             return {
               ...leave,
@@ -257,7 +289,22 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
           };
         } else {
           // "Not Recommended" - Moves to next approver
-          const nextApproverId = currentApproverUser?.approver;
+          let nextApproverId = currentApproverUser?.approver;
+
+          // --- INTERCEPTION LOGIC ---
+          if (nextApproverId) {
+            const nextUser = users.find((u) => u.id === nextApproverId);
+            const isTargetMD =
+              nextUser?.role === "MD" || nextUser?.role === "Director";
+
+            if (isTargetMD && currentApproverUser?.role !== "HR") {
+              const hrUser = users.find((u) => u.role === "HR");
+              if (hrUser) {
+                nextApproverId = hrUser.id;
+              }
+            }
+          }
+          // --- END INTERCEPTION ---
           // If no next, then it is effectively rejected? Or stays stuck?
           // Assuming hierarchy leads to MD.
 
@@ -329,7 +376,22 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         if (leave.id !== leaveId) return leave;
 
         const currentApproverUser = users.find((u) => u.id === approverId);
-        const nextApproverId = currentApproverUser?.approver;
+        let nextApproverId = currentApproverUser?.approver;
+
+        // --- INTERCEPTION LOGIC ---
+        if (nextApproverId) {
+          const nextUser = users.find((u) => u.id === nextApproverId);
+          const isTargetMD =
+            nextUser?.role === "MD" || nextUser?.role === "Director";
+
+          if (isTargetMD && currentApproverUser?.role !== "HR") {
+            const hrUser = users.find((u) => u.role === "HR");
+            if (hrUser) {
+              nextApproverId = hrUser.id;
+            }
+          }
+        }
+        // --- END INTERCEPTION ---
 
         if (!nextApproverId) {
           // No next approver to skip to.
