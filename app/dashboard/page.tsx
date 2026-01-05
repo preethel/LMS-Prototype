@@ -78,8 +78,19 @@ export default function Dashboard() {
           title="Remaining"
           value={
             myBalance
-              ? `${myBalance.totalDays - myBalance.usedDays} Days ${myBalance.totalHours - (myBalance.usedHours || 0)
-              } Hrs`
+              ? (() => {
+                  const totalQuotaHours = myBalance.totalDays * 8;
+                  const usedHoursTotal =
+                    (myBalance.usedDays || 0) * 8 + (myBalance.usedHours || 0);
+                  const remainingHours = totalQuotaHours - usedHoursTotal;
+
+                  const rDays = Math.floor(remainingHours / 8);
+                  const rHrs = remainingHours % 8;
+
+                  return rHrs > 0
+                    ? `${rDays} Days ${rHrs} Hrs`
+                    : `${rDays} Days`;
+                })()
               : "0"
           }
           subtext="Available Balance"
@@ -88,7 +99,13 @@ export default function Dashboard() {
           title="Used"
           value={
             myBalance
-              ? `${myBalance.usedDays} Days ${myBalance.usedHours || 0} Hrs`
+              ? (() => {
+                  const usedDays = myBalance.usedDays || 0;
+                  const usedHrs = myBalance.usedHours || 0;
+                  return usedHrs > 0
+                    ? `${usedDays} Days ${usedHrs} Hrs`
+                    : `${usedDays} Days`;
+                })()
               : "0"
           }
           subtext="Consumed to Date"
@@ -139,10 +156,10 @@ export default function Dashboard() {
                       <td className="px-6 py-4 text-gray-600 font-medium text-xs">
                         {request.approvalChain.length > 0
                           ? getUserName(
-                            request.approvalChain[
-                              request.approvalChain.length - 1
-                            ].approverId
-                          )
+                              request.approvalChain[
+                                request.approvalChain.length - 1
+                              ].approverId
+                            )
                           : "Direct"}
                       </td>
                       <td className="px-6 py-4">{request.type}</td>
@@ -222,8 +239,8 @@ export default function Dashboard() {
                       {leave.startDate === leave.endDate
                         ? formatDate(leave.startDate)
                         : `${formatDate(leave.startDate)} to ${formatDate(
-                          leave.endDate
-                        )}`}
+                            leave.endDate
+                          )}`}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       {leave.daysCalculated}{" "}

@@ -540,27 +540,64 @@ export default function LeaveRequestDetails({
             <div className="relative z-10 flex justify-between items-end">
               <div>
                 <h3 className="text-indigo-200 font-medium uppercase tracking-wider text-sm mb-1">
-                  Leave Balance
+                  {currentUser.id === request.userId
+                    ? "Projected Balance"
+                    : "Current Balance"}
                 </h3>
                 <div className="text-4xl font-bold">
-                  {request.type === "Short"
-                    ? (requesterBalance?.totalHours || 0) -
-                      (requesterBalance?.usedHours || 0)
-                    : (requesterBalance?.totalDays || 0) -
-                      (requesterBalance?.usedDays || 0)}{" "}
-                  <span className="text-lg text-indigo-300 font-normal">
+                  {(() => {
+                    // Normalize everything to Hours (1 Day = 8 Hours)
+                    // Fix: totalHours in mock data is just a representation of totalDays, not additive.
+                    const totalQuotaHours =
+                      (requesterBalance?.totalDays || 0) * 8;
+
+                    const usedHours =
+                      (requesterBalance?.usedDays || 0) * 8 +
+                      (requesterBalance?.usedHours || 0);
+
+                    let remainingHours = totalQuotaHours - usedHours;
+
+                    // If Applicant View, deduct THIS request's value visually
+                    if (
+                      currentUser.id === request.userId &&
+                      request.status === "Pending"
+                    ) {
+                      const deduction =
+                        request.type === "Short"
+                          ? request.daysCalculated // Short leave stored as hours
+                          : request.daysCalculated * 8; // Regular leave stored as days
+                      remainingHours -= deduction;
+                    }
+
+                    const displayDays = Math.floor(remainingHours / 8);
+                    const displayHours = remainingHours % 8;
+
+                    return (
+                      <>
+                        {displayDays}
+                        <span className="text-2xl font-normal text-indigo-300 ml-1">
+                          Days
+                        </span>
+                        {displayHours > 0 && (
+                          <>
+                            {" "}
+                            {displayHours}
+                            <span className="text-2xl font-normal text-indigo-300 ml-1">
+                              Hours
+                            </span>
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
+                  <div className="text-sm font-normal text-indigo-300 mt-1">
                     Remaining
-                  </span>
+                  </div>
                 </div>
                 <p className="text-indigo-200 text-sm mt-2 opacity-80">
-                  Total Quota:{" "}
-                  {request.type === "Short"
-                    ? requesterBalance?.totalHours + " Hours"
-                    : requesterBalance?.totalDays + " Days"}{" "}
-                  • Used:{" "}
-                  {request.type === "Short"
-                    ? requesterBalance?.usedHours + " Hours"
-                    : requesterBalance?.usedDays + " Days"}
+                  Total Quota: {requesterBalance?.totalDays} Days • Used:{" "}
+                  {requesterBalance?.usedDays || 0} Days +{" "}
+                  {requesterBalance?.usedHours || 0} Hours
                 </p>
               </div>
               <button

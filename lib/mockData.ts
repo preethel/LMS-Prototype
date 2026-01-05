@@ -60,8 +60,8 @@ export const MOCK_BALANCES: LeaveBalance[] = [
         sickQuota: 10, sickUsed: 4, casualQuota: 10, casualUsed: 8 // Consistent with leaves below
     },
     {
-        userId: 'u2', year: 2024, totalDays: 20, usedDays: 2, pendingDays: 2, totalHours: 16, usedHours: 0, // l19 is short, actually l19 is pending so usedHours should be 2? Wait, l19 type is Short, start 10:00 end 12:00 = 2h.
-        sickQuota: 10, sickUsed: 0, casualQuota: 10, casualUsed: 2 // l18 is Regular Casual 2 days.
+        userId: 'u2', year: 2024, totalDays: 20, usedDays: 2, pendingDays: 2, totalHours: 160, usedHours: 2,
+        sickQuota: 10, sickUsed: 0, casualQuota: 10, casualUsed: 2
     },
     {
         userId: 'u3', year: 2024, totalDays: 20, usedDays: 0, pendingDays: 0, totalHours: 16, usedHours: 0,
