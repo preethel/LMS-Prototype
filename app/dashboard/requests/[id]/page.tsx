@@ -243,7 +243,7 @@ export default function LeaveRequestDetails({
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="w-full">
       {/* Header Section */}
       <div className="flex items-center justify-between mb-6">
         <div>
