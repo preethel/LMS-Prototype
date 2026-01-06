@@ -106,15 +106,15 @@ export default function LeaveRequestDetails({
       title: string;
       date?: string;
       status:
-      | "Calculated"
-      | "Pending"
-      | "Upcoming"
-      | "Approved"
-      | "Rejected"
-      | "Skipped"
-      | "Recommended"
-      | "Not Recommended"
-      | "Applied";
+        | "Calculated"
+        | "Pending"
+        | "Upcoming"
+        | "Approved"
+        | "Rejected"
+        | "Skipped"
+        | "Recommended"
+        | "Not Recommended"
+        | "Applied";
       actor?: string;
       role?: string;
       remarks?: string;
@@ -281,295 +281,87 @@ export default function LeaveRequestDetails({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Details & Stats (2/3) */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Main Details Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-4 border-b border-gray-50 bg-gray-50/30 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-800">
-                Request Details
-              </h2>
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
+      {/* Horizontal Timeline Section */}
+      <div className="mb-8">
+        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
+          Request Timeline
+        </h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+          <div className="relative flex justify-between">
+            {/* Horizontal Line Background */}
+            <div className="absolute top-3 left-0 w-full h-0.5 bg-gray-100 -z-0"></div>
+
+            {timelineEvents.map((event, idx) => {
+              // Calculate width for the progress bar (if we wanted a colored progress bar)
+              // For now, simple static line is fine.
+              return (
+                <div
+                  key={idx}
+                  className="flex flex-col items-center relative z-10 flex-1 group"
+                >
+                  {/* Node Dot */}
+                  <div
+                    className={`w-7 h-7 rounded-full border-4 border-white shadow-sm flex items-center justify-center ${getTimelineIconColor(
+                      event.status
+                    )} transition-transform group-hover:scale-110`}
+                  ></div>
+
+                  {/* Content */}
+                  <div className="mt-4 text-center">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-0.5">
+                      {event.date ? formatDate(event.date) : "Expected"}
+                    </p>
+                    <h4 className="text-sm font-bold text-gray-900 leading-tight">
+                      {event.title}
+                    </h4>
+                    {event.actor && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {event.role || "System"}
+                      </p>
+                    )}
+                    {event.remarks && (
+                      <div className="mt-2 bg-gray-50 p-2 rounded text-xs text-gray-600 border border-gray-100 max-w-[200px] mx-auto">
+                        {event.remarks}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-8">
+        {/* Main Details Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
                   {requester?.name.charAt(0)}
                 </div>
-                <div className="text-sm">
-                  <p className="font-semibold text-gray-900">
+                <div>
+                  <p className="font-bold text-gray-900 text-lg">
                     {requester?.name}
                   </p>
-                  <p className="text-gray-500 text-xs">
+                  <p className="text-gray-500 text-sm">
                     {requester?.designation}
                   </p>
                 </div>
               </div>
-            </div>
 
-            <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
-                  Start Date
-                </label>
-                <p className="text-lg font-medium text-gray-900">
-                  {formatDate(request.startDate)}
-                </p>
-                {request.startTime && (
-                  <p className="text-sm text-gray-500">{request.startTime}</p>
-                )}
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
-                  End Date
-                </label>
-                <p className="text-lg font-medium text-gray-900">
-                  {formatDate(request.endDate)}
-                </p>
-                {request.endTime && (
-                  <p className="text-sm text-gray-500">{request.endTime}</p>
-                )}
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
-                  Duration
-                </label>
-                <p className="text-lg font-medium text-indigo-600">
-                  {formatDuration(request.daysCalculated)}{" "}
-                  {request.type === "Short" ? "Hours" : "Days"}
-                </p>
-              </div>
+              <div className="hidden md:block w-px h-10 bg-gray-200 mx-2"></div>
 
-              <div className="col-span-1 md:col-span-3">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">
-                  Reason
-                </label>
-                <div className="bg-gray-50 p-3 rounded-xl text-gray-600 leading-relaxed">
-                  {request.reason}
-                </div>
-              </div>
-
-              {/* Attachments Section */}
-              {request.attachments && request.attachments.length > 0 && (
-                <div className="col-span-1 md:col-span-3">
-                  <div className="flex items-center justify-between bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
-                        📎
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-indigo-900 text-sm">
-                          Attachments
-                        </h4>
-                        <p className="text-xs text-indigo-600">
-                          {request.attachments.length} files attached
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setIsAttachmentsOpen(true)}
-                      className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-                    >
-                      View & Download
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Unpaid Field / Administrative - ONLY VISIBLE TO HR/MD */}
-              {isFinalAuthority && (
-                <div className="col-span-1 md:col-span-3 pt-4 border-t border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="text-sm font-bold text-gray-700 block">
-                        Unpaid / LWP Days
-                      </label>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Mark days as Loss of Pay if applicable
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        max={request.daysCalculated}
-                        value={formatDuration(request.unpaidLeaveDays || 0)}
-                        onChange={(e) =>
-                          updateUnpaidLeaveDays(
-                            request.id,
-                            Number(e.target.value)
-                          )
-                        }
-                        className="w-24 text-center px-3 py-2 border border-gray-200 rounded-lg text-lg font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all hover:border-gray-300"
-                      />
-                      <span className="text-gray-400 font-medium">
-                        / {formatDuration(request.daysCalculated)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {(!isReadOnly || hasProcessed) && (
-              <div className="p-5 bg-gray-50 border-t border-gray-100">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  {hasProcessed && isReadOnly
-                    ? "My Remarks"
-                    : "Remarks (Optional)"}
-                </label>
-                <textarea
-                  value={
-                    hasProcessed && isReadOnly
-                      ? hasProcessed.remarks || ""
-                      : remarks
-                  }
-                  onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="Add a note..."
-                  disabled={!!(hasProcessed && isReadOnly)}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none mb-4 transition-all disabled:bg-gray-100 disabled:text-gray-500"
-                  rows={2}
-                />
-                {!isReadOnly && (
-                  <div className="flex gap-4">
-                    {hasProcessed ? (
-                      <>
-                        <button
-                          onClick={handleApprove}
-                          disabled={hasProcessed.status === "Approved"}
-                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${hasProcessed.status === "Approved"
-                            ? "bg-green-50 text-green-300 cursor-not-allowed border border-green-100"
-                            : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
-                            }`}
-                        >
-                          {hasProcessed.status === "Approved" ||
-                            hasProcessed.status === "Recommended"
-                            ? isFinalAuthority
-                              ? "Approved"
-                              : "Recommended"
-                            : isFinalAuthority
-                              ? "Change to Approve"
-                              : "Change to Recommend"}
-                        </button>
-                        <button
-                          onClick={handleReject}
-                          disabled={
-                            hasProcessed.status === "Rejected" ||
-                            hasProcessed.status === "Not Recommended"
-                          }
-                          className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${hasProcessed.status === "Rejected" ||
-                            hasProcessed.status === "Not Recommended"
-                            ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
-                            : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
-                            }`}
-                        >
-                          {hasProcessed.status === "Rejected" ||
-                            hasProcessed.status === "Not Recommended"
-                            ? isFinalAuthority
-                              ? "Rejected"
-                              : "Not Recommended"
-                            : isFinalAuthority
-                              ? "Change to Reject"
-                              : "Change to Not Recommend"}
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        {isFinalAuthority && !hasProcessed ? (
-                          <>
-                            {/* HR/Admin Special Actions */}
-                            <button
-                              onClick={() => {
-                                if (hasProcessed) {
-                                  editApproval(
-                                    request.id,
-                                    currentUser.id,
-                                    "Approved",
-                                    remarks
-                                  );
-                                } else {
-                                  approveLeave(
-                                    request.userId,
-                                    request.id,
-                                    currentUser.id,
-                                    remarks,
-                                    true // isFinalDecision = true
-                                  );
-                                }
-                                router.push("/dashboard");
-                              }}
-                              className="flex-1 bg-gradient-to-r from-green-600 to-green-500 text-white py-2.5 rounded-xl font-bold hover:from-green-700 hover:to-green-600 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
-                            >
-                              Approve & Finalize
-                            </button>
-                            <button
-                              onClick={() => {
-                                // Forward to Director
-                                approveLeave(
-                                  request.userId,
-                                  request.id,
-                                  currentUser.id,
-                                  remarks,
-                                  false // isFinalDecision = false
-                                );
-                                router.push("/dashboard");
-                              }}
-                              className="flex-1 bg-white text-indigo-600 border border-indigo-200 py-2.5 rounded-xl font-bold hover:bg-indigo-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
-                            >
-                              Forward to Director
-                            </button>
-                            <button
-                              onClick={handleReject}
-                              className="px-6 py-2.5 bg-white text-red-600 border border-red-200 rounded-xl font-bold hover:bg-red-50 transition-all"
-                            >
-                              Reject
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={handleApprove}
-                              className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
-                            >
-                              {isFinalAuthority ? "Approve" : "Recommend"}
-                            </button>
-                            <button
-                              onClick={handleReject}
-                              className="flex-1 bg-white text-red-600 border border-red-200 py-2.5 rounded-xl font-bold hover:bg-red-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
-                            >
-                              {isFinalAuthority ? "Reject" : "Not Recommend"}
-                            </button>
-                            <button
-                              onClick={handleSkip}
-                              className="px-6 py-2.5 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-all"
-                            >
-                              Forward
-                            </button>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Column: Timeline (1/3) */}
-        <div className="lg:col-span-1 space-y-8">
-          {/* Employee Balance Stats (Moved Here) */}
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl shadow-lg text-white p-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white opacity-5"></div>
-            <div className="relative z-10 flex justify-between items-end">
-              <div>
-                <h3 className="text-indigo-200 font-medium uppercase tracking-wider text-sm mb-1">
+              <div className="hidden md:block">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">
                   {currentUser.id === request.userId
                     ? "Projected Balance"
                     : "Current Balance"}
-                </h3>
-                <div className="text-4xl font-bold">
+                </p>
+                <div className="text-sm font-bold text-indigo-600 flex items-baseline gap-1">
                   {(() => {
                     // Normalize everything to Hours (1 Day = 8 Hours)
-                    // Fix: totalHours in mock data is just a representation of totalDays, not additive.
                     const totalQuotaHours =
                       (requesterBalance?.totalDays || 0) * 8;
 
@@ -597,14 +389,14 @@ export default function LeaveRequestDetails({
                     return (
                       <>
                         {formatDuration(displayDays)}
-                        <span className="text-2xl font-normal text-indigo-300 ml-1">
+                        <span className="text-xs font-normal text-gray-500">
                           Days
                         </span>
                         {displayHours > 0 && (
                           <>
                             {" "}
                             {formatDuration(displayHours)}
-                            <span className="text-2xl font-normal text-indigo-300 ml-1">
+                            <span className="text-xs font-normal text-gray-500">
                               Hours
                             </span>
                           </>
@@ -612,70 +404,272 @@ export default function LeaveRequestDetails({
                       </>
                     );
                   })()}
-                  <div className="text-sm font-normal text-indigo-300 mt-1">
+                  <span className="text-gray-400 font-normal ml-1 text-xs">
                     Remaining
-                  </div>
+                  </span>
                 </div>
-                <p className="text-indigo-200 text-sm mt-2 opacity-80">
-                  Total Quota: {formatDuration(requesterBalance?.totalDays || 0)} Days • Used:{" "}
-                  {formatDuration(requesterBalance?.usedDays || 0)} Days +{" "}
-                  {formatDuration(requesterBalance?.usedHours || 0)} Hours
-                </p>
               </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Mobile-only balance view could go here if needed, but for now we rely on the responsive stack */}
               <button
                 onClick={() => setIsHistoryOpen(true)}
-                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors backdrop-blur-sm"
+                className="px-4 py-2 bg-white text-indigo-600 border border-indigo-200 text-sm font-bold rounded-lg hover:bg-indigo-50 transition-colors shadow-sm"
               >
                 View History
               </button>
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
-              Request Timeline
-            </h3>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <div className="space-y-0 relative">
-                {/* Vertical Line Line */}
-                <div className="absolute left-3 top-3 bottom-3 w-0.5 bg-gray-100"></div>
+          <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
+                Start Date
+              </label>
+              <p className="text-lg font-medium text-gray-900">
+                {formatDate(request.startDate)}
+              </p>
+              {request.startTime && (
+                <p className="text-sm text-gray-500">{request.startTime}</p>
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
+                End Date
+              </label>
+              <p className="text-lg font-medium text-gray-900">
+                {formatDate(request.endDate)}
+              </p>
+              {request.endTime && (
+                <p className="text-sm text-gray-500">{request.endTime}</p>
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
+                Duration
+              </label>
+              <p className="text-lg font-medium text-indigo-600">
+                {formatDuration(request.daysCalculated)}{" "}
+                {request.type === "Short" ? "Hours" : "Days"}
+              </p>
+            </div>
 
-                {timelineEvents.map((event, idx) => (
-                  <div
-                    key={idx}
-                    className="relative pl-10 pb-8 last:pb-0 group"
-                  >
-                    {/* Node Dot */}
-                    <div
-                      className={`absolute left-0 top-1 w-6 h-6 rounded-full border-4 border-white shadow-sm z-10 ${getTimelineIconColor(
-                        event.status
-                      )}`}
-                    ></div>
-
-                    {/* Card Content */}
-                    <div className="transition-all hover:translate-x-1">
-                      <p className="text-xs font-bold text-gray-400 uppercase mb-0.5">
-                        {event.date ? formatDate(event.date) : "Expected"}
-                      </p>
-                      <h4 className="text-sm font-bold text-gray-900">
-                        {event.title}
-                      </h4>
-                      {event.actor && (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {event.role || "System"}
-                        </p>
-                      )}
-                      {event.remarks && (
-                        <div className="mt-2 bg-gray-50 p-2 rounded text-xs text-gray-600 italic border-l-2 border-gray-200">
-                          &quot;{event.remarks}&quot;
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+            <div className="col-span-1 md:col-span-3">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">
+                Reason
+              </label>
+              <div className="bg-gray-50 p-3 rounded-xl text-gray-600 leading-relaxed">
+                {request.reason}
               </div>
             </div>
+
+            {/* Attachments Section */}
+            {request.attachments && request.attachments.length > 0 && (
+              <div className="col-span-1 md:col-span-3">
+                <div className="flex items-center justify-between bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                      📎
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-indigo-900 text-sm">
+                        Attachments
+                      </h4>
+                      <p className="text-xs text-indigo-600">
+                        {request.attachments.length} files attached
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsAttachmentsOpen(true)}
+                    className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                  >
+                    View & Download
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Unpaid Field / Administrative - ONLY VISIBLE TO HR/MD */}
+            {isFinalAuthority && (
+              <div className="col-span-1 md:col-span-3 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-bold text-gray-700 block">
+                      Unpaid / LWP Days
+                    </label>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Mark days as Loss of Pay if applicable
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max={request.daysCalculated}
+                      value={formatDuration(request.unpaidLeaveDays || 0)}
+                      onChange={(e) =>
+                        updateUnpaidLeaveDays(
+                          request.id,
+                          Number(e.target.value)
+                        )
+                      }
+                      className="w-24 text-center px-3 py-2 border border-gray-200 rounded-lg text-lg font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all hover:border-gray-300"
+                    />
+                    <span className="text-gray-400 font-medium">
+                      / {formatDuration(request.daysCalculated)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+
+          {(!isReadOnly || hasProcessed) && (
+            <div className="p-5 bg-gray-50 border-t border-gray-100">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                {hasProcessed && isReadOnly
+                  ? "My Remarks"
+                  : "Remarks (Optional)"}
+              </label>
+              <textarea
+                value={
+                  hasProcessed && isReadOnly
+                    ? hasProcessed.remarks || ""
+                    : remarks
+                }
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="Add a note..."
+                disabled={!!(hasProcessed && isReadOnly)}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none mb-4 transition-all disabled:bg-gray-100 disabled:text-gray-500"
+                rows={2}
+              />
+              {!isReadOnly && (
+                <div className="flex gap-4">
+                  {hasProcessed ? (
+                    <>
+                      <button
+                        onClick={handleApprove}
+                        disabled={hasProcessed.status === "Approved"}
+                        className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
+                          hasProcessed.status === "Approved"
+                            ? "bg-green-50 text-green-300 cursor-not-allowed border border-green-100"
+                            : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
+                        }`}
+                      >
+                        {hasProcessed.status === "Approved" ||
+                        hasProcessed.status === "Recommended"
+                          ? isFinalAuthority
+                            ? "Approved"
+                            : "Recommended"
+                          : isFinalAuthority
+                          ? "Change to Approve"
+                          : "Change to Recommend"}
+                      </button>
+                      <button
+                        onClick={handleReject}
+                        disabled={
+                          hasProcessed.status === "Rejected" ||
+                          hasProcessed.status === "Not Recommended"
+                        }
+                        className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
+                          hasProcessed.status === "Rejected" ||
+                          hasProcessed.status === "Not Recommended"
+                            ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
+                            : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
+                        }`}
+                      >
+                        {hasProcessed.status === "Rejected" ||
+                        hasProcessed.status === "Not Recommended"
+                          ? isFinalAuthority
+                            ? "Rejected"
+                            : "Not Recommended"
+                          : isFinalAuthority
+                          ? "Change to Reject"
+                          : "Change to Not Recommend"}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {isFinalAuthority && !hasProcessed ? (
+                        <>
+                          {/* HR/Admin Special Actions */}
+                          <button
+                            onClick={() => {
+                              if (hasProcessed) {
+                                editApproval(
+                                  request.id,
+                                  currentUser.id,
+                                  "Approved",
+                                  remarks
+                                );
+                              } else {
+                                approveLeave(
+                                  request.userId,
+                                  request.id,
+                                  currentUser.id,
+                                  remarks,
+                                  true // isFinalDecision = true
+                                );
+                              }
+                              router.push("/dashboard");
+                            }}
+                            className="flex-1 bg-gradient-to-r from-green-600 to-green-500 text-white py-2.5 rounded-xl font-bold hover:from-green-700 hover:to-green-600 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
+                          >
+                            Approve & Finalize
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Forward to Director
+                              approveLeave(
+                                request.userId,
+                                request.id,
+                                currentUser.id,
+                                remarks,
+                                false // isFinalDecision = false
+                              );
+                              router.push("/dashboard");
+                            }}
+                            className="flex-1 bg-white text-indigo-600 border border-indigo-200 py-2.5 rounded-xl font-bold hover:bg-indigo-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
+                          >
+                            Forward to Director
+                          </button>
+                          <button
+                            onClick={handleReject}
+                            className="px-6 py-2.5 bg-white text-red-600 border border-red-200 rounded-xl font-bold hover:bg-red-50 transition-all"
+                          >
+                            Reject
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={handleApprove}
+                            className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
+                          >
+                            {isFinalAuthority ? "Approve" : "Recommend"}
+                          </button>
+                          <button
+                            onClick={handleReject}
+                            className="flex-1 bg-white text-red-600 border border-red-200 py-2.5 rounded-xl font-bold hover:bg-red-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
+                          >
+                            {isFinalAuthority ? "Reject" : "Not Recommend"}
+                          </button>
+                          <button
+                            onClick={handleSkip}
+                            className="px-6 py-2.5 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-all"
+                          >
+                            Forward
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
