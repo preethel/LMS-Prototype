@@ -78,7 +78,7 @@ export default function LoginPage() {
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex w-1/2 bg-indigo-900 relative overflow-hidden flex-col justify-between p-12 text-white">
         <div className="relative z-10">
-          <div className="bg-white p-4 rounded-xl inline-block mb-8">
+          <div className="p-4 rounded-xl inline-block mb-8">
             <Image
               src="/logo.png"
               alt="Hawar IT"
@@ -88,10 +88,10 @@ export default function LoginPage() {
               priority
             />
           </div>
-          <h1 className="text-5xl font-bold mb-6 leading-tight">HITDB</h1>
+          <h1 className="text-5xl font-bold mb-6 leading-tight">WorkSphere</h1>
           <p className="text-indigo-200 text-lg max-w-md">
-            Experience a streamlined workflow for HITDB applications, recursive
-            approvals, and real-time balance tracking.
+            Your unified workspace for leave management, approvals, and team
+            coordination.
           </p>
         </div>
 

@@ -6,8 +6,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "HITDB",
-  description: "HITDB",
+  title: "WorkSphere",
+  description: "Modern Employee Workspace",
 };
 
 export default function RootLayout({

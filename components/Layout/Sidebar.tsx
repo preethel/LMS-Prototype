@@ -24,7 +24,7 @@ export default function Sidebar() {
   return (
     <div className="w-64 bg-gray-900 min-h-screen text-white flex flex-col">
       <div className="p-6 flex justify-center">
-        <div className="bg-white p-3 rounded-lg w-full flex justify-center">
+        <div className="p-3 rounded-lg w-full flex justify-center">
           <Image
             src="/logo.png"
             alt="Hawar IT"
