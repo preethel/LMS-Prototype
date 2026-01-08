@@ -5,6 +5,8 @@ import { User } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import Image from "next/image";
+
 export default function LoginPage() {
   const { users, login } = useLMS();
   const router = useRouter();
@@ -76,23 +78,18 @@ export default function LoginPage() {
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex w-1/2 bg-indigo-900 relative overflow-hidden flex-col justify-between p-12 text-white">
         <div className="relative z-10">
-          <div className="h-12 w-12 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center mb-8">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+          <div className="bg-white p-4 rounded-xl inline-block mb-8">
+            <Image
+              src="/logo.png"
+              alt="Hawar IT"
+              width={200}
+              height={60}
+              className="object-contain h-12 w-auto"
+              priority
+            />
           </div>
           <h1 className="text-5xl font-bold mb-6 leading-tight">
-            HawarIT <br /> Leave Management System
+            Leave Management <br /> System
           </h1>
           <p className="text-indigo-200 text-lg max-w-md">
             Experience a streamlined workflow for leave applications, recursive
