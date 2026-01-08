@@ -16,9 +16,7 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
-          All Notifications
-        </h2>
+        <div />
         <div className="flex space-x-3">
           <div className="flex bg-white rounded-lg p-1 border border-gray-200">
             <button
