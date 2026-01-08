@@ -6,8 +6,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Hawar IT LMS",
-  description: "Leave Management System Prototype",
+  title: "HITDB",
+  description: "HITDB",
 };
 
 export default function RootLayout({

@@ -88,11 +88,9 @@ export default function LoginPage() {
               priority
             />
           </div>
-          <h1 className="text-5xl font-bold mb-6 leading-tight">
-            Leave Management <br /> System
-          </h1>
+          <h1 className="text-5xl font-bold mb-6 leading-tight">HITDB</h1>
           <p className="text-indigo-200 text-lg max-w-md">
-            Experience a streamlined workflow for leave applications, recursive
+            Experience a streamlined workflow for HITDB applications, recursive
             approvals, and real-time balance tracking.
           </p>
         </div>
