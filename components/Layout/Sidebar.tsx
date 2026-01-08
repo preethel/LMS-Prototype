@@ -48,41 +48,84 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-4 space-y-2">
-        <Link
-          href="/dashboard"
-          className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            pathname === "/dashboard" ? activeClass : inactiveClass
-          }`}
-        >
-          Dashboard
-        </Link>
-        <Link
-          href="/dashboard/approvals"
-          className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            pathname === "/dashboard/approvals" ? activeClass : inactiveClass
-          }`}
-        >
-          Approvals
-        </Link>
-        <Link
-          href="/dashboard/my-applications"
-          className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            pathname === "/dashboard/my-applications"
-              ? activeClass
-              : inactiveClass
-          }`}
-        >
-          My Applications
-        </Link>
-        <Link
-          href="/dashboard/settings"
-          className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            pathname === "/dashboard/settings" ? activeClass : inactiveClass
-          }`}
-        >
-          Settings
-        </Link>
+      <nav className="flex-1 px-4 space-y-6 overflow-y-auto mt-4">
+        {/* LEAVE MANAGEMENT GROUP */}
+        <div>
+          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            Leave Management
+          </h3>
+          <div className="space-y-1">
+            <Link
+              href="/dashboard"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                pathname === "/dashboard" ? activeClass : inactiveClass
+              }`}
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/dashboard/my-applications"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                pathname === "/dashboard/my-applications"
+                  ? activeClass
+                  : inactiveClass
+              }`}
+            >
+              My Applications
+            </Link>
+            <Link
+              href="/dashboard/approvals"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                pathname === "/dashboard/approvals"
+                  ? activeClass
+                  : inactiveClass
+              }`}
+            >
+              Approvals
+            </Link>
+          </div>
+        </div>
+
+        {/* EMPLOYEE ASSIGNMENT GROUP */}
+        <div>
+          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            Employee Assignment
+          </h3>
+          <div className="space-y-1">
+            <Link
+              href="#"
+              className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed hover:bg-gray-800/50"
+            >
+              Team Allocation{" "}
+              <span className="text-[10px] bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded ml-2">
+                Soon
+              </span>
+            </Link>
+            <Link
+              href="#"
+              className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed hover:bg-gray-800/50"
+            >
+              Project Tracking
+            </Link>
+          </div>
+        </div>
+
+        {/* SYSTEM GROUP */}
+        <div>
+          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            System
+          </h3>
+          <div className="space-y-1">
+            <Link
+              href="/dashboard/settings"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                pathname === "/dashboard/settings" ? activeClass : inactiveClass
+              }`}
+            >
+              Settings
+            </Link>
+          </div>
+        </div>
       </nav>
 
       <div className="p-4 border-t border-gray-800">
