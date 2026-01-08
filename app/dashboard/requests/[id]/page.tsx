@@ -244,43 +244,6 @@ export default function LeaveRequestDetails({
 
   return (
     <div className="w-full">
-      {/* Header Section */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <button
-            onClick={() => router.back()}
-            className="mb-2 text-sm text-gray-400 hover:text-gray-900 transition-colors flex items-center gap-1"
-          >
-            ← Back
-          </button>
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-bold text-gray-900">
-              {request.nature || request.type} Leave Request
-            </h1>
-            <span
-              className={`px-4 py-1.5 rounded-full text-sm font-bold border ${getStatusColor(
-                request.status
-              )}`}
-            >
-              {request.status}
-            </span>
-            {hasProcessed && (
-              <span
-                className={`px-3 py-1.5 rounded-full text-xs font-bold border ml-2 ${getStatusColor(
-                  hasProcessed.status
-                )}`}
-              >
-                My Decision: {hasProcessed.status}
-              </span>
-            )}
-          </div>
-          <p className="text-gray-500 mt-1">
-            Request ID:{" "}
-            <span className="font-mono text-gray-400">#{request.id}</span>
-          </p>
-        </div>
-      </div>
-
       {/* Horizontal Timeline Section */}
       <div className="mb-8">
         <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
