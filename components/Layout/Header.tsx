@@ -66,6 +66,7 @@ export default function Header() {
     else if (pathname.includes("/approvals")) title = "Approvals";
     else if (pathname.includes("/my-applications")) title = "My Applications";
     else if (pathname.includes("/notifications")) title = "Notifications";
+    else if (pathname.includes("/settings")) title = "Settings";
 
     return (
       <div>

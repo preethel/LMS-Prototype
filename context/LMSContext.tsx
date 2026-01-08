@@ -48,13 +48,14 @@ interface LMSContextType {
     newRemarks: string
   ) => void;
   updateUnpaidLeaveDays: (leaveId: string, days: number) => void;
+  setDelegate: (userId: string, delegateId: string | null) => void;
 }
 
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
 
 export const LMSProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [users] = useState<User[]>(MOCK_USERS);
+  const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [leaves, setLeaves] = useState<LeaveRequest[]>(MOCK_LEAVES);
   const [balances, setBalances] = useState<LeaveBalance[]>(MOCK_BALANCES);
 
@@ -363,10 +364,28 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     const approver = users.find((u) => u.id === approverId);
     if (approver?.role === "HR") {
       // HR sees ALL pending requests
+      // AND also requests delegated to them specially? HR sees all anyway.
       return leaves.filter((l) => l.status === "Pending");
     }
+
+    // Find all users who have delegated TO this approverId
+    const delegators = users
+      .filter((u) => u.delegatedTo === approverId)
+      .map((u) => u.id);
+
     return leaves.filter(
-      (l) => l.status === "Pending" && l.currentApproverId === approverId
+      (l) =>
+        l.status === "Pending" &&
+        (l.currentApproverId === approverId ||
+          (l.currentApproverId && delegators.includes(l.currentApproverId)))
+    );
+  };
+
+  const setDelegate = (userId: string, delegateId: string | null) => {
+    setUsers((prevUsers) =>
+      prevUsers.map((u) =>
+        u.id === userId ? { ...u, delegatedTo: delegateId || undefined } : u
+      )
     );
   };
 
@@ -612,6 +631,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         editApproval,
         skipLeave,
         updateUnpaidLeaveDays,
+        setDelegate,
       }}
     >
       {children}

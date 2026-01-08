@@ -11,6 +11,7 @@ export interface User {
     avatarUrl?: string;
     designation: string;
     role: 'Employee' | 'TeamLead' | 'Manager' | 'HR' | 'MD' | 'Director';
+    delegatedTo?: string; // ID of the user to whom approval authority is delegated
 }
 
 export interface LeaveBalance {
