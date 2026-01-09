@@ -144,10 +144,27 @@ export default function LeaveRequestDetails({
         displayStatus = "Recommended";
       }
 
-      const event: any = {
+      const event: {
+        title: string;
+        date?: string;
+        status:
+          | "Calculated"
+          | "Pending"
+          | "Upcoming"
+          | "Approved"
+          | "Rejected"
+          | "Skipped"
+          | "Recommended"
+          | "Not Recommended"
+          | "Applied";
+        actor?: string;
+        role?: string;
+        remarks?: string;
+        isConnector?: boolean;
+      } = {
         title: `${displayStatus} by ${actor?.name}`,
         date: step.date,
-        status: step.status, // Keep original status for color logic
+        status: step.status as any, // Cast specific approval status to general status
         actor: actor?.name,
         role: actor?.designation,
       };
@@ -162,25 +179,64 @@ export default function LeaveRequestDetails({
 
     // 3. Current & Future (If still pending/active)
     if (request.status === "Pending") {
-      let nextApproverId = request.currentApproverId;
+      const seqApprovers = requester?.sequentialApprovers || [];
+      const currentApproverId = request.currentApproverId;
 
-      // Safety break to prevent infinite loops in circular hierarchy
-      let depth = 0;
-      const maxDepth = 10;
+      // Find where we are in sequence
+      let currentIndex = -1;
+      if (currentApproverId) {
+        currentIndex = seqApprovers.indexOf(currentApproverId);
+      }
 
-      while (nextApproverId && depth < maxDepth) {
-        const approver = users.find((u) => u.id === nextApproverId);
-        if (!approver) break;
+      // 3.1: Current Pending Step
+      if (currentApproverId) {
+        const currentParams = users.find((u) => u.id === currentApproverId);
+        if (currentParams) {
+          events.push({
+            title: "Currently Pending",
+            status: "Pending",
+            actor: currentParams.name,
+            role: currentParams.designation,
+          });
+        }
+      }
 
-        events.push({
-          title: depth === 0 ? "Currently Pending" : "Up Next",
-          status: depth === 0 ? "Pending" : "Upcoming",
-          actor: approver.name,
-          role: approver.designation,
-        });
+      // 3.2: Future Steps (Sequence)
+      if (currentIndex !== -1) {
+        // Show remaining sequential approvers
+        for (let i = currentIndex + 1; i < seqApprovers.length; i++) {
+          const u = users.find((user) => user.id === seqApprovers[i]);
+          if (u) {
+            events.push({
+              title: "Up Next",
+              status: "Upcoming",
+              actor: u.name,
+              role: u.designation,
+            });
+          }
+        }
+      }
 
-        nextApproverId = approver.approver;
-        depth++;
+      // 3.3: Future Steps (HR / Final)
+      // If we are still in sequence (seqIndex < length) OR if currently with HR/MD, we might need to show next steps.
+      // Logic simplified: If the last predicted step wasn't HR/MD, add HR as "Up Next" (unless HR is already current/past)
+
+      const lastEventActor = events[events.length - 1];
+      const lastActorUser = users.find((u) => u.name === lastEventActor?.actor);
+
+      if (
+        lastActorUser &&
+        !["HR", "MD", "Director"].includes(lastActorUser.role)
+      ) {
+        const hrUser = users.find((u) => u.role === "HR");
+        if (hrUser && hrUser.id !== request.currentApproverId) {
+          events.push({
+            title: "Up Next",
+            status: "Upcoming",
+            actor: hrUser.name,
+            role: hrUser.designation,
+          });
+        }
       }
     } else if (request.status === "Approved") {
       events.push({

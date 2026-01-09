@@ -60,14 +60,7 @@ export default function EmployeeManagementPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Employee Setup</h2>
-          <p className="text-gray-500 text-sm mt-1">
-            Configure approval sequences for employees.
-          </p>
-        </div>
-      </div>
+      
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <table className="w-full text-left text-sm">

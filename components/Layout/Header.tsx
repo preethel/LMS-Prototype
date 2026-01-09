@@ -62,20 +62,32 @@ export default function Header() {
 
     // Default Header Content
     let title = "Dashboard";
-    if (pathname === "/dashboard") title = "Dashboard";
-    else if (pathname.includes("/approvals")) title = "Approvals";
-    else if (pathname.includes("/my-applications")) title = "My Applications";
-    else if (pathname.includes("/notifications")) title = "Notifications";
-    else if (pathname.includes("/settings")) title = "Settings";
+    let description = currentUser ? `Welcome back, ${currentUser.name}` : "";
+
+    if (pathname === "/dashboard") {
+      title = "Dashboard";
+      description = currentUser ? `Welcome back, ${currentUser.name}` : "";
+    } else if (pathname.includes("/approvals")) {
+      title = "Approvals";
+      description = "Manage pending requests and review history";
+    } else if (pathname.includes("/my-applications")) {
+      title = "My Applications";
+      description = "Track your leave history and status";
+    } else if (pathname.includes("/notifications")) {
+      title = "Notifications";
+      description = "Stay updated with latest activities";
+    } else if (pathname.includes("/settings")) {
+      title = "Settings";
+      description = "Configure your preferences";
+    } else if (pathname.includes("/employees")) {
+      title = "Team Allocation";
+      description = "Manage employee settings and approvals";
+    }
 
     return (
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-        {currentUser && (
-          <p className="text-sm text-gray-500 mt-1">
-            Welcome back, {currentUser.name}
-          </p>
-        )}
+        <p className="text-sm text-gray-500 mt-1">{description}</p>
       </div>
     );
   };
