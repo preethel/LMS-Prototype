@@ -164,13 +164,32 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
       prev.map((leave) => {
         if (leave.id !== leaveId) return leave;
 
-        const currentApproverUser = users.find((u) => u.id === approverId);
+        // Determine who is logically approving this (the "Role" being performed)
+        // If approverId is the assigned approver, then actingForId = approverId
+        // If assigned approver has DELEGATED to approverId, then actingForId = assigned approver (leave.currentApproverId)
+
+        let actingForId = approverId;
+        const assignedApproverUser = users.find(
+          (u) => u.id === leave.currentApproverId
+        );
+
+        if (
+          assignedApproverUser &&
+          assignedApproverUser.delegatedTo === approverId
+        ) {
+          actingForId = assignedApproverUser.id;
+        }
+
+        const actingForUser = users.find((u) => u.id === actingForId);
+
         // isFinalAuthority logic: If passed explicitly OR if role is MD/Director (who are implicitly final)
         // HR is potentially final if they choose to be.
+        // NOTE: Uses actingForUser to determine authority level.
+        // If I delegate to my junior, they approve AS ME (Manager).
         const isFinalAuthority =
           isFinalDecision ||
-          currentApproverUser?.role === "MD" ||
-          currentApproverUser?.role === "Director";
+          actingForUser?.role === "MD" ||
+          actingForUser?.role === "Director";
 
         // Determine Action Status
         const actionStatus = isFinalAuthority ? "Approved" : "Recommended";
@@ -199,7 +218,8 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
           let nextApproverId: string | undefined;
           const submittingUser = users.find((u) => u.id === leave.userId);
           const seqApprovers = submittingUser?.sequentialApprovers || [];
-          const currentSeqIndex = seqApprovers.indexOf(approverId);
+          // Use actingForId to find position in sequence
+          const currentSeqIndex = seqApprovers.indexOf(actingForId);
 
           if (
             currentSeqIndex !== -1 &&
@@ -209,7 +229,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
             nextApproverId = seqApprovers[currentSeqIndex + 1];
           } else {
             // 2. If end of sequence OR not in sequence
-            if (currentApproverUser?.role !== "HR") {
+            if (actingForUser?.role !== "HR") {
               // Standard path: Forward to HR
               const hrUser = users.find((u) => u.role === "HR");
               nextApproverId = hrUser?.id;
@@ -272,9 +292,21 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         if (leave.id !== leaveId) return leave;
 
         const currentApproverUser = users.find((u) => u.id === approverId);
+
+        let actingForId = approverId;
+        const assignedApproverUser = users.find(
+          (u) => u.id === leave.currentApproverId
+        );
+        if (
+          assignedApproverUser &&
+          assignedApproverUser.delegatedTo === approverId
+        ) {
+          actingForId = assignedApproverUser.id;
+        }
+        const actingForUser = users.find((u) => u.id === actingForId);
+
         const isFinalAuthority =
-          currentApproverUser?.role === "HR" ||
-          currentApproverUser?.role === "MD";
+          actingForUser?.role === "HR" || actingForUser?.role === "MD";
 
         if (isFinalAuthority) {
           // Restore Balance ONLY if it's a final Rejection
@@ -323,7 +355,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
           let nextApproverId: string | undefined;
           const submittingUser = users.find((u) => u.id === leave.userId);
           const seqApprovers = submittingUser?.sequentialApprovers || [];
-          const currentSeqIndex = seqApprovers.indexOf(approverId);
+          const currentSeqIndex = seqApprovers.indexOf(actingForId);
 
           if (
             currentSeqIndex !== -1 &&
@@ -334,13 +366,13 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
             seqApprovers.length > 0 &&
             currentSeqIndex === seqApprovers.length - 1
           ) {
-            if (currentApproverUser?.role !== "HR") {
+            if (actingForUser?.role !== "HR") {
               const hrUser = users.find((u) => u.role === "HR");
               nextApproverId = hrUser?.id;
             }
           } else {
             // Fallback
-            if (currentApproverUser?.role !== "HR") {
+            if (actingForUser?.role !== "HR") {
               const hrUser = users.find((u) => u.role === "HR");
               nextApproverId = hrUser?.id;
             }
@@ -436,6 +468,12 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         u.id === userId ? { ...u, delegatedTo: delegateId || undefined } : u
       )
     );
+    // Also update current user if it's them
+    if (currentUser?.id === userId) {
+      setCurrentUser((prev) =>
+        prev ? { ...prev, delegatedTo: delegateId || undefined } : null
+      );
+    }
   };
 
   const updateUserApprovers = (userId: string, approverIds: string[]) => {
@@ -452,11 +490,24 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         if (leave.id !== leaveId) return leave;
 
         const currentApproverUser = users.find((u) => u.id === approverId);
+
+        let actingForId = approverId;
+        const assignedApproverUser = users.find(
+          (u) => u.id === leave.currentApproverId
+        );
+        if (
+          assignedApproverUser &&
+          assignedApproverUser.delegatedTo === approverId
+        ) {
+          actingForId = assignedApproverUser.id;
+        }
+        const actingForUser = users.find((u) => u.id === actingForId);
+
         let nextApproverId: string | undefined;
 
         const submittingUser = users.find((u) => u.id === leave.userId);
         const seqApprovers = submittingUser?.sequentialApprovers || [];
-        const currentSeqIndex = seqApprovers.indexOf(approverId);
+        const currentSeqIndex = seqApprovers.indexOf(actingForId);
 
         if (
           currentSeqIndex !== -1 &&
@@ -467,12 +518,12 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
           seqApprovers.length > 0 &&
           currentSeqIndex === seqApprovers.length - 1
         ) {
-          if (currentApproverUser?.role !== "HR") {
+          if (actingForUser?.role !== "HR") {
             const hrUser = users.find((u) => u.role === "HR");
             nextApproverId = hrUser?.id;
           }
         } else {
-          if (currentApproverUser?.role !== "HR") {
+          if (actingForUser?.role !== "HR") {
             const hrUser = users.find((u) => u.role === "HR");
             nextApproverId = hrUser?.id;
           }
