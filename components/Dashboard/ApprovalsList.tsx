@@ -2,9 +2,10 @@
 
 import { useLMS } from "@/context/LMSContext";
 import { formatDate, formatDuration } from "@/lib/utils";
-import { Check, Eye, X } from "lucide-react";
+import { Calendar, Check, Eye, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import LeaveCalendarModal from "./LeaveCalendarModal";
 
 interface ApprovalsListProps {
   limit?: number;
@@ -22,6 +23,10 @@ export default function ApprovalsList({
   const { currentUser, getPendingApprovals, users, approveLeave, rejectLeave } =
     useLMS();
   const [currentPage, setCurrentPage] = useState(1);
+  const [calendarData, setCalendarData] = useState<{
+    start: string;
+    end: string;
+  } | null>(null);
   const itemsPerPage = 10;
 
   if (!currentUser) return null;
@@ -94,15 +99,17 @@ export default function ApprovalsList({
                 <th className="px-6 py-3">Last Approver</th>
                 <th className="px-6 py-3">Type</th>
                 <th className="px-6 py-3">Duration</th>
-                <th className="px-6 py-3">Dates</th>
+                <th className="px-6 py-3">From</th>
+                <th className="px-6 py-3">To</th>
                 <th className="px-6 py-3">Actions</th>
+                <th className="px-6 py-3 text-center">Calendar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {displayData.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-8 text-center text-gray-400"
                   >
                     No pending requests found.
@@ -133,6 +140,9 @@ export default function ApprovalsList({
                     </td>
                     <td className="px-6 py-4 text-gray-500">
                       {formatDate(request.startDate)}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">
+                      {formatDate(request.endDate)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -176,6 +186,20 @@ export default function ApprovalsList({
                         </button>
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        onClick={() =>
+                          setCalendarData({
+                            start: request.startDate,
+                            end: request.endDate,
+                          })
+                        }
+                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
+                        title="View in Calendar"
+                      >
+                        <Calendar size={18} />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -206,6 +230,15 @@ export default function ApprovalsList({
           </div>
         )}
       </div>
+
+      {calendarData && (
+        <LeaveCalendarModal
+          isOpen={!!calendarData}
+          onClose={() => setCalendarData(null)}
+          startDate={calendarData.start}
+          endDate={calendarData.end}
+        />
+      )}
     </div>
   );
 }

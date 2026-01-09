@@ -3,9 +3,10 @@
 import { useLMS } from "@/context/LMSContext";
 import { LeaveRequest } from "@/lib/types";
 import { formatDate, formatDuration } from "@/lib/utils";
-import { Eye, X } from "lucide-react";
+import { Calendar, Eye, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import LeaveCalendarModal from "./LeaveCalendarModal";
 
 interface ApplicationsListProps {
   limit?: number;
@@ -22,6 +23,10 @@ export default function ApplicationsList({
 }: ApplicationsListProps) {
   const { currentUser, leaves, cancelLeave } = useLMS();
   const [currentPage, setCurrentPage] = useState(1);
+  const [calendarData, setCalendarData] = useState<{
+    start: string;
+    end: string;
+  } | null>(null);
   const itemsPerPage = 10;
 
   if (!currentUser) return null;
@@ -109,16 +114,18 @@ export default function ApplicationsList({
           <thead className="bg-gray-50 text-gray-500 font-medium">
             <tr>
               <th className="px-6 py-3">Type</th>
-              <th className="px-6 py-3">Dates</th>
+              <th className="px-6 py-3">From</th>
+              <th className="px-6 py-3">To</th>
               <th className="px-6 py-3">Result</th>
               <th className="px-6 py-3">Status</th>
               <th className="px-6 py-3">Action</th>
+              <th className="px-6 py-3 text-center">Calendar</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-400">
                   No applications found.
                 </td>
               </tr>
@@ -137,11 +144,10 @@ export default function ApplicationsList({
                     )}
                   </td>
                   <td className="px-6 py-4 text-gray-600">
-                    {leave.startDate === leave.endDate
-                      ? formatDate(leave.startDate)
-                      : `${formatDate(leave.startDate)} to ${formatDate(
-                          leave.endDate
-                        )}`}
+                    {formatDate(leave.startDate)}
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {formatDate(leave.endDate)}
                   </td>
                   <td className="px-6 py-4 text-gray-600">
                     {formatDuration(leave.daysCalculated)}{" "}
@@ -182,6 +188,20 @@ export default function ApplicationsList({
                       </button>
                     )}
                   </td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() =>
+                        setCalendarData({
+                          start: leave.startDate,
+                          end: leave.endDate,
+                        })
+                      }
+                      className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
+                      title="View in Calendar"
+                    >
+                      <Calendar size={18} />
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
@@ -210,6 +230,15 @@ export default function ApplicationsList({
             Next
           </button>
         </div>
+      )}
+
+      {calendarData && (
+        <LeaveCalendarModal
+          isOpen={!!calendarData}
+          onClose={() => setCalendarData(null)}
+          startDate={calendarData.start}
+          endDate={calendarData.end}
+        />
       )}
     </div>
   );
