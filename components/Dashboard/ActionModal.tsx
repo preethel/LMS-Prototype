@@ -11,6 +11,7 @@ interface ActionModalProps {
   cancelLabel?: string;
   onConfirm: (data?: string) => void | Promise<void>;
   inputRequired?: boolean;
+  showInput?: boolean;
   inputPlaceholder?: string;
   isLoading?: boolean;
 }
@@ -25,11 +26,15 @@ export default function ActionModal({
   cancelLabel = "Cancel",
   onConfirm,
   inputRequired = false,
+  showInput = false, // New prop
   inputPlaceholder = "",
   isLoading = false,
 }: ActionModalProps) {
   const [inputValue, setInputValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Derive effective visibility
+  const shouldShowInput = showInput || inputRequired;
 
   useEffect(() => {
     if (isOpen) {
@@ -47,7 +52,7 @@ export default function ActionModal({
 
     setIsSubmitting(true);
     try {
-      await onConfirm(inputRequired ? inputValue : undefined);
+      await onConfirm(shouldShowInput ? inputValue : undefined);
       onClose();
     } catch (error) {
       console.error("Action failed:", error);
@@ -55,6 +60,9 @@ export default function ActionModal({
       setIsSubmitting(false);
     }
   };
+  // ...
+  // In render:
+  // Change inputRequired && to shouldShowInput &&
 
   const getIcon = () => {
     switch (type) {
@@ -114,7 +122,7 @@ export default function ActionModal({
                 <p className="text-sm text-gray-500">{message}</p>
               </div>
 
-              {inputRequired && (
+              {(showInput || inputRequired) && (
                 <div className="mt-4">
                   <textarea
                     rows={3}

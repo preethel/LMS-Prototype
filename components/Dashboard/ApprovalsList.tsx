@@ -275,11 +275,12 @@ export default function ApprovalsList({
           confirmLabel={
             actionModal.type === "approve" ? "Approve" : "Reject Request"
           }
-          inputRequired={actionModal.type === "reject"} // Optional for Approve, Required for Reject
+          inputRequired={false} // NOW OPTIONAL FOR BOTH
+          showInput={true} // ALWAYS SHOW INPUT
           inputPlaceholder={
             actionModal.type === "approve"
               ? "Enter remarks (optional)..."
-              : "Enter reason for rejection..."
+              : "Enter reason for rejection (optional)..."
           }
           onConfirm={(remarks) => {
             if (actionModal.request) {
