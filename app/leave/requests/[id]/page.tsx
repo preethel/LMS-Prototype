@@ -162,7 +162,7 @@ export default function LeaveRequestDetails({
         remarks?: string;
         isConnector?: boolean;
       } = {
-        title: `${displayStatus} by ${actor?.name}`,
+        title: displayStatus,
         date: step.date,
         status: step.status as any, // Cast specific approval status to general status
         actor: actor?.name,
@@ -334,9 +334,14 @@ export default function LeaveRequestDetails({
                       {event.title}
                     </h4>
                     {event.actor && (
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {event.role || "System"}
-                      </p>
+                      <div className="mt-0.5">
+                        <p className="text-xs font-semibold text-gray-700">
+                          {event.actor}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-medium">
+                          {event.role}
+                        </p>
+                      </div>
                     )}
                     {event.remarks && (
                       <div className="mt-2 bg-gray-50 p-2 rounded text-xs text-gray-600 border border-gray-100 max-w-[200px] mx-auto">
