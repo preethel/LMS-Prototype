@@ -127,6 +127,20 @@ export default function Sidebar() {
             >
               Settings
             </Link>
+
+            {/* Reports - HR Only */}
+            {currentUser.role === "HR" && (
+              <Link
+                href="/dashboard/reports"
+                className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  pathname === "/dashboard/reports"
+                    ? activeClass
+                    : inactiveClass
+                }`}
+              >
+                Reports
+              </Link>
+            )}
           </div>
         </div>
       </nav>

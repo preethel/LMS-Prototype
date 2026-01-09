@@ -82,6 +82,9 @@ export default function Header() {
     } else if (pathname.includes("/employees")) {
       title = "Team Allocation";
       description = "Manage employee settings and approvals";
+    } else if (pathname.includes("/reports")) {
+      title = "Reports";
+      description = "Generate and export leave reports";
     }
 
     return (
