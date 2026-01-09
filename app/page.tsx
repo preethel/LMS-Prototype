@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   const handleQuickLogin = (userId: string) => {
     login(userId);
-    router.push("/dashboard");
+    router.push("/leave/dashboard");
   };
 
   const handleStandardLogin = (e: React.FormEvent) => {
@@ -32,7 +32,7 @@ export default function LoginPage() {
 
     if (user) {
       login(user.id);
-      router.push("/dashboard");
+      router.push("/leave/dashboard");
     } else {
       // Fallback for demo if email doesn't match specific user, just login as first user
       // Or show error? User asked for a "demo", usually implies flexible.

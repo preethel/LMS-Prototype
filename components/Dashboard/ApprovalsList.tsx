@@ -65,7 +65,7 @@ export default function ApprovalsList({
           </div>
           {showViewAll && (
             <Link
-              href="/dashboard/approvals"
+              href="/leave/approvals"
               className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
             >
               View All
@@ -137,7 +137,7 @@ export default function ApprovalsList({
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Link
-                          href={`/dashboard/requests/${request.id}`}
+                          href={`/leave/requests/${request.id}`}
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
                           title="View Details"
                         >

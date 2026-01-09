@@ -56,17 +56,17 @@ export default function Sidebar() {
           </h3>
           <div className="space-y-1">
             <Link
-              href="/dashboard"
+              href="/leave/dashboard"
               className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                pathname === "/dashboard" ? activeClass : inactiveClass
+                pathname === "/leave/dashboard" ? activeClass : inactiveClass
               }`}
             >
               Dashboard
             </Link>
             <Link
-              href="/dashboard/my-applications"
+              href="/leave/my-applications"
               className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                pathname === "/dashboard/my-applications"
+                pathname === "/leave/my-applications"
                   ? activeClass
                   : inactiveClass
               }`}
@@ -74,75 +74,76 @@ export default function Sidebar() {
               My Applications
             </Link>
             <Link
-              href="/dashboard/approvals"
+              href="/leave/approvals"
               className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                pathname === "/dashboard/approvals"
-                  ? activeClass
-                  : inactiveClass
+                pathname === "/leave/approvals" ? activeClass : inactiveClass
               }`}
             >
               Approvals
             </Link>
-          </div>
-        </div>
-
-        {/* EMPLOYEE ASSIGNMENT GROUP - HR, Director, MD */}
-        {["HR", "Director", "MD"].includes(currentUser.role) && (
-          <div>
-            <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Employee Assignment
-            </h3>
-            <div className="space-y-1">
+            {["HR", "Director", "MD"].includes(currentUser.role) && (
               <Link
-                href="/dashboard/employees"
+                href="/leave/employees"
                 className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  pathname === "/dashboard/employees"
-                    ? activeClass
-                    : inactiveClass
+                  pathname === "/leave/employees" ? activeClass : inactiveClass
                 }`}
               >
-                Team Allocation
-              </Link>
-              <Link
-                href="#"
-                className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed hover:bg-gray-800/50"
-              >
-                Project Tracking
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* SYSTEM GROUP */}
-        <div>
-          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            System
-          </h3>
-          <div className="space-y-1">
-            <Link
-              href="/dashboard/settings"
-              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                pathname === "/dashboard/settings" ? activeClass : inactiveClass
-              }`}
-            >
-              Settings
-            </Link>
-
-            {/* Reports - HR Only */}
-            {currentUser.role === "HR" && (
-              <Link
-                href="/dashboard/reports"
-                className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  pathname === "/dashboard/reports"
-                    ? activeClass
-                    : inactiveClass
-                }`}
-              >
-                Reports
+                Approver Configurations
               </Link>
             )}
           </div>
         </div>
+
+        <div>
+          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            Employee Assignment
+          </h3>
+          <div className="space-y-1">
+            <Link
+              href=""
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                pathname === "" ? activeClass : inactiveClass
+              }`}
+            >
+              Assign
+            </Link>
+            <Link
+              href=""
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                pathname === "" ? activeClass : inactiveClass
+              }`}
+            >
+              Open
+            </Link>
+          </div>
+        </div>
+
+        {/* SYSTEM GROUP - HR Only */}
+        {currentUser.role === "HR" && (
+          <div>
+            <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              System
+            </h3>
+            <div className="space-y-1">
+              <Link
+                href="/leave/reports"
+                className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  pathname === "/leave/reports" ? activeClass : inactiveClass
+                }`}
+              >
+                Reports
+              </Link>
+              <Link
+                href="/leave/settings"
+                className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  pathname === "/leave/settings" ? activeClass : inactiveClass
+                }`}
+              >
+                Settings
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       <div className="p-4 border-t border-gray-800">

@@ -95,7 +95,7 @@ export default function ApplicationsList({
           <h3 className="font-semibold text-gray-900">My Applications</h3>
           {showViewAll && (
             <Link
-              href="/dashboard/my-applications"
+              href="/leave/my-applications"
               className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
             >
               View All
@@ -158,7 +158,7 @@ export default function ApplicationsList({
                   </td>
                   <td className="px-6 py-4 flex items-center gap-2">
                     <Link
-                      href={`/dashboard/requests/${leave.id}?readOnly=true`}
+                      href={`/leave/requests/${leave.id}?readOnly=true`}
                       className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
                       title="View Details"
                     >
