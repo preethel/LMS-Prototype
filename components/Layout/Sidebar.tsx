@@ -93,7 +93,7 @@ export default function Sidebar() {
                   pathname === "/leave/employees" ? activeClass : inactiveClass
                 }`}
               >
-                Approver Configurations
+                Approver Config
               </Link>
             )}
           </div>

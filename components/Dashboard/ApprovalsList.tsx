@@ -131,7 +131,15 @@ export default function ApprovalsList({
                     className="hover:bg-gray-50/50 transition-colors"
                   >
                     <td className="px-6 py-4 font-semibold text-gray-900">
-                      {getUserName(request.userId)}
+                      <div>
+                        {getUserName(request.userId)}
+                        {request.currentApproverId &&
+                          request.currentApproverId !== currentUser.id && (
+                            <span className="block text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full w-fit mt-1">
+                              Via {getUserName(request.currentApproverId)}
+                            </span>
+                          )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600 font-medium text-xs">
                       {request.approvalChain.length > 0

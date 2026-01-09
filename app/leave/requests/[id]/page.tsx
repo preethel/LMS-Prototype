@@ -67,11 +67,11 @@ export default function LeaveRequestDetails({
         title: "Leave Request Updated",
         message: `Your leave request has been marked as Approved by ${currentUser.name}.`,
         type: "success",
-        link: `/dashboard/requests/${request.id}`,
+        link: `/leave/requests/${request.id}`,
       });
     }
 
-    router.push("/dashboard");
+    router.push("/leave/dashboard");
   };
 
   const handleReject = () => {
@@ -88,16 +88,16 @@ export default function LeaveRequestDetails({
         title: "Leave Request Rejected",
         message: `Your leave request has been Rejected by ${currentUser.name}.`,
         type: "error",
-        link: `/dashboard/requests/${request.id}`,
+        link: `/leave/requests/${request.id}`,
       });
     }
 
-    router.push("/dashboard");
+    router.push("/leave/dashboard");
   };
 
   const handleSkip = () => {
     skipLeave(request.id, currentUser.id);
-    router.push("/dashboard");
+    router.push("/leave/dashboard");
   };
 
   // --- Timeline Logic ---
@@ -637,7 +637,7 @@ export default function LeaveRequestDetails({
                                   true // isFinalDecision = true
                                 );
                               }
-                              router.push("/dashboard");
+                              router.push("/leave/dashboard");
                             }}
                             className="flex-1 bg-gradient-to-r from-green-600 to-green-500 text-white py-2.5 rounded-xl font-bold hover:from-green-700 hover:to-green-600 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
                           >

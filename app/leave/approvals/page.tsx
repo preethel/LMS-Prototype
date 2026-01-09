@@ -155,7 +155,7 @@ export default function ApprovalsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <Link
-                            href={`/dashboard/requests/${request.id}?readOnly=true`}
+                            href={`/leave/requests/${request.id}?readOnly=true`}
                             className="text-indigo-600 hover:text-indigo-800 font-semibold text-xs border border-indigo-200 px-3 py-1.5 rounded transition-colors"
                           >
                             Details
