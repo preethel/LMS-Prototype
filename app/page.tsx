@@ -88,7 +88,7 @@ export default function LoginPage() {
               priority
             />
           </div>
-          <h1 className="text-5xl font-bold mb-6 leading-tight">WorkSphere</h1>
+          <h1 className="text-5xl font-bold mb-6 leading-tight">HIT Portal</h1>
           <p className="text-indigo-200 text-lg max-w-md">
             Your unified workspace for leave management, approvals, and team
             coordination.
