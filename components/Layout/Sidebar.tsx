@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 export default function Sidebar() {
-  const { currentUser, logout } = useLMS();
+  const { currentUser, logout, users } = useLMS();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -73,14 +73,19 @@ export default function Sidebar() {
             >
               My Applications
             </Link>
-            <Link
-              href="/leave/approvals"
-              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                pathname === "/leave/approvals" ? activeClass : inactiveClass
-              }`}
-            >
-              Approvals
-            </Link>
+            {(["TeamLead", "Manager", "HR", "MD", "Director"].includes(
+              currentUser.role
+            ) ||
+              users.some((u) => u.delegatedTo === currentUser.id)) && (
+              <Link
+                href="/leave/approvals"
+                className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  pathname === "/leave/approvals" ? activeClass : inactiveClass
+                }`}
+              >
+                Approvals
+              </Link>
+            )}
             {["HR", "Director", "MD"].includes(currentUser.role) && (
               <Link
                 href="/leave/employees"
@@ -119,12 +124,13 @@ export default function Sidebar() {
         </div>
 
         {/* SYSTEM GROUP - HR Only */}
-        {currentUser.role === "HR" && (
-          <div>
-            <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              System
-            </h3>
-            <div className="space-y-1">
+
+        <div>
+          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            System
+          </h3>
+          <div className="space-y-1">
+            {currentUser.role === "HR" && (
               <Link
                 href="/leave/reports"
                 className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -133,17 +139,17 @@ export default function Sidebar() {
               >
                 Reports
               </Link>
-              <Link
-                href="/leave/settings"
-                className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  pathname === "/leave/settings" ? activeClass : inactiveClass
-                }`}
-              >
-                Settings
-              </Link>
-            </div>
+            )}
+            <Link
+              href="/leave/settings"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                pathname === "/leave/settings" ? activeClass : inactiveClass
+              }`}
+            >
+              Settings
+            </Link>
           </div>
-        )}
+        </div>
       </nav>
 
       <div className="p-4 border-t border-gray-800">

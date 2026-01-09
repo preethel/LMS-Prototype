@@ -1,10 +1,10 @@
-"use client";
-
 import { useLMS } from "@/context/LMSContext";
+import { LeaveRequest } from "@/lib/types";
 import { formatDate, formatDuration } from "@/lib/utils";
 import { Calendar, Check, Eye, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import ActionModal from "./ActionModal";
 import LeaveCalendarModal from "./LeaveCalendarModal";
 
 interface ApprovalsListProps {
@@ -27,6 +27,15 @@ export default function ApprovalsList({
     start: string;
     end: string;
   } | null>(null);
+  const [actionModal, setActionModal] = useState<{
+    isOpen: boolean;
+    type: "approve" | "reject";
+    request: LeaveRequest | null;
+  }>({
+    isOpen: false,
+    type: "approve",
+    request: null,
+  });
   const itemsPerPage = 10;
 
   if (!currentUser) return null;
@@ -155,16 +164,11 @@ export default function ApprovalsList({
                         </Link>
                         <button
                           onClick={() => {
-                            const remarks =
-                              window.prompt("Enter remarks (optional):") || "";
-                            if (remarks !== null) {
-                              approveLeave(
-                                request.userId,
-                                request.id,
-                                currentUser.id,
-                                remarks
-                              );
-                            }
+                            setActionModal({
+                              isOpen: true,
+                              type: "approve",
+                              request: request,
+                            });
                           }}
                           className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-green-100"
                           title="Quick Approve"
@@ -173,11 +177,11 @@ export default function ApprovalsList({
                         </button>
                         <button
                           onClick={() => {
-                            const remarks =
-                              window.prompt("Enter remarks (optional):") || "";
-                            if (remarks !== null) {
-                              rejectLeave(request.id, currentUser.id, remarks);
-                            }
+                            setActionModal({
+                              isOpen: true,
+                              type: "reject",
+                              request: request,
+                            });
                           }}
                           className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
                           title="Quick Reject"
@@ -237,6 +241,52 @@ export default function ApprovalsList({
           onClose={() => setCalendarData(null)}
           startDate={calendarData.start}
           endDate={calendarData.end}
+        />
+      )}
+
+      {/* Action Modal */}
+      {actionModal.isOpen && actionModal.request && (
+        <ActionModal
+          isOpen={actionModal.isOpen}
+          onClose={() => setActionModal({ ...actionModal, isOpen: false })}
+          title={
+            actionModal.type === "approve"
+              ? "Approve Request"
+              : "Reject Request"
+          }
+          message={
+            actionModal.type === "approve"
+              ? `Are you sure you want to approve the leave request for ${getUserName(
+                  actionModal.request.userId
+                )}?`
+              : `Are you sure you want to reject the leave request for ${getUserName(
+                  actionModal.request.userId
+                )}?`
+          }
+          type={actionModal.type === "approve" ? "success" : "danger"}
+          confirmLabel={
+            actionModal.type === "approve" ? "Approve" : "Reject Request"
+          }
+          inputRequired={actionModal.type === "reject"} // Optional for Approve, Required for Reject
+          inputPlaceholder={
+            actionModal.type === "approve"
+              ? "Enter remarks (optional)..."
+              : "Enter reason for rejection..."
+          }
+          onConfirm={(remarks) => {
+            if (actionModal.request) {
+              if (actionModal.type === "approve") {
+                approveLeave(
+                  actionModal.request.userId,
+                  actionModal.request.id,
+                  currentUser.id,
+                  remarks
+                );
+              } else {
+                rejectLeave(actionModal.request.id, currentUser.id, remarks);
+              }
+            }
+          }}
         />
       )}
     </div>
