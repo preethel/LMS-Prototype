@@ -93,13 +93,12 @@ export default function Sidebar() {
           </h3>
           <div className="space-y-1">
             <Link
-              href="#"
-              className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed hover:bg-gray-800/50"
+              href="/dashboard/employees"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                pathname === "/dashboard/employees" ? activeClass : inactiveClass
+              }`}
             >
-              Team Allocation{" "}
-              <span className="text-[10px] bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded ml-2">
-                Soon
-              </span>
+              Team Allocation
             </Link>
             <Link
               href="#"

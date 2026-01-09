@@ -7,11 +7,11 @@ export interface User {
     id: string;
     name: string;
     email: string;
-    approver?: string; // ID of the next person in the hierarchy
     avatarUrl?: string;
     designation: string;
     role: 'Employee' | 'TeamLead' | 'Manager' | 'HR' | 'MD' | 'Director';
     delegatedTo?: string; // ID of the user to whom approval authority is delegated
+    sequentialApprovers?: string[]; // Ordered list of approver IDs for sequential flow
 }
 
 export interface LeaveBalance {

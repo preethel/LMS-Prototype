@@ -49,6 +49,7 @@ interface LMSContextType {
   ) => void;
   updateUnpaidLeaveDays: (leaveId: string, days: number) => void;
   setDelegate: (userId: string, delegateId: string | null) => void;
+  updateUserApprovers: (userId: string, approverIds: string[]) => void;
 }
 
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
@@ -116,6 +117,20 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
       })
     );
 
+    // Determine Initial Approver
+    // If sequential approvers are set, use the first one.
+    // Otherwise, default to HR (or could be Manager if we had that logic, but now purely sequential + role based).
+    // Let's assume valid setup requires sequential approvers OR we send to HR if list is empty.
+    let initialApproverId: string | undefined;
+
+    if (user.sequentialApprovers && user.sequentialApprovers.length > 0) {
+      initialApproverId = user.sequentialApprovers[0];
+    } else {
+      // Fallback: Send to HR directly if no sequence defined
+      const hrUser = users.find((u) => u.role === "HR");
+      initialApproverId = hrUser?.id;
+    }
+
     const newLeave: LeaveRequest = {
       id: `l${Date.now()}`,
       userId,
@@ -125,7 +140,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
       endDate: end,
       reason,
       status: "Pending",
-      currentApproverId: user.approver,
+      currentApproverId: initialApproverId,
       approvalChain: [],
       createdAt: new Date().toISOString(),
       daysCalculated: quantity,
@@ -182,15 +197,29 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         } else {
           // Move up hierarchy
           let nextApproverId: string | undefined;
+          const submittingUser = users.find((u) => u.id === leave.userId);
+          const seqApprovers = submittingUser?.sequentialApprovers || [];
+          const currentSeqIndex = seqApprovers.indexOf(approverId);
 
-          // If current approver is HR, route to Director (forwarding means escalation)
-          if (currentApproverUser?.role === "HR") {
-            const director = users.find(
-              (u) => u.role === "Director" || u.role === "MD"
-            );
-            nextApproverId = director?.id;
+          if (
+            currentSeqIndex !== -1 &&
+            currentSeqIndex < seqApprovers.length - 1
+          ) {
+            // 1. If current approver is in the sequence and not the last, move to the next in sequence
+            nextApproverId = seqApprovers[currentSeqIndex + 1];
           } else {
-            nextApproverId = currentApproverUser?.approver;
+            // 2. If end of sequence OR not in sequence
+            if (currentApproverUser?.role !== "HR") {
+              // Standard path: Forward to HR
+              const hrUser = users.find((u) => u.role === "HR");
+              nextApproverId = hrUser?.id;
+            } else {
+              // HR Forwarding path: Forward to Director/MD
+              const director = users.find(
+                (u) => u.role === "Director" || u.role === "MD"
+              );
+              nextApproverId = director?.id;
+            }
           }
 
           // --- INTERCEPTION LOGIC ---
@@ -290,7 +319,32 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
           };
         } else {
           // "Not Recommended" - Moves to next approver
-          let nextApproverId = currentApproverUser?.approver;
+
+          let nextApproverId: string | undefined;
+          const submittingUser = users.find((u) => u.id === leave.userId);
+          const seqApprovers = submittingUser?.sequentialApprovers || [];
+          const currentSeqIndex = seqApprovers.indexOf(approverId);
+
+          if (
+            currentSeqIndex !== -1 &&
+            currentSeqIndex < seqApprovers.length - 1
+          ) {
+            nextApproverId = seqApprovers[currentSeqIndex + 1];
+          } else if (
+            seqApprovers.length > 0 &&
+            currentSeqIndex === seqApprovers.length - 1
+          ) {
+            if (currentApproverUser?.role !== "HR") {
+              const hrUser = users.find((u) => u.role === "HR");
+              nextApproverId = hrUser?.id;
+            }
+          } else {
+            // Fallback
+            if (currentApproverUser?.role !== "HR") {
+              const hrUser = users.find((u) => u.role === "HR");
+              nextApproverId = hrUser?.id;
+            }
+          }
 
           // --- INTERCEPTION LOGIC ---
           if (nextApproverId) {
@@ -362,11 +416,6 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
 
   const getPendingApprovals = (approverId: string) => {
     const approver = users.find((u) => u.id === approverId);
-    if (approver?.role === "HR") {
-      // HR sees ALL pending requests
-      // AND also requests delegated to them specially? HR sees all anyway.
-      return leaves.filter((l) => l.status === "Pending");
-    }
 
     // Find all users who have delegated TO this approverId
     const delegators = users
@@ -389,13 +438,45 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  const updateUserApprovers = (userId: string, approverIds: string[]) => {
+    setUsers((prevUsers) =>
+      prevUsers.map((u) =>
+        u.id === userId ? { ...u, sequentialApprovers: approverIds } : u
+      )
+    );
+  };
+
   const skipLeave = (leaveId: string, approverId: string) => {
     setLeaves((prev) =>
       prev.map((leave) => {
         if (leave.id !== leaveId) return leave;
 
         const currentApproverUser = users.find((u) => u.id === approverId);
-        let nextApproverId = currentApproverUser?.approver;
+        let nextApproverId: string | undefined;
+
+        const submittingUser = users.find((u) => u.id === leave.userId);
+        const seqApprovers = submittingUser?.sequentialApprovers || [];
+        const currentSeqIndex = seqApprovers.indexOf(approverId);
+
+        if (
+          currentSeqIndex !== -1 &&
+          currentSeqIndex < seqApprovers.length - 1
+        ) {
+          nextApproverId = seqApprovers[currentSeqIndex + 1];
+        } else if (
+          seqApprovers.length > 0 &&
+          currentSeqIndex === seqApprovers.length - 1
+        ) {
+          if (currentApproverUser?.role !== "HR") {
+            const hrUser = users.find((u) => u.role === "HR");
+            nextApproverId = hrUser?.id;
+          }
+        } else {
+          if (currentApproverUser?.role !== "HR") {
+            const hrUser = users.find((u) => u.role === "HR");
+            nextApproverId = hrUser?.id;
+          }
+        }
 
         // --- INTERCEPTION LOGIC ---
         if (nextApproverId) {
@@ -632,6 +713,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         skipLeave,
         updateUnpaidLeaveDays,
         setDelegate,
+        updateUserApprovers,
       }}
     >
       {children}
