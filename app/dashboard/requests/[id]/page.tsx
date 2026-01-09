@@ -582,22 +582,25 @@ export default function LeaveRequestDetails({
                           >
                             Approve & Finalize
                           </button>
-                          <button
-                            onClick={() => {
-                              // Forward to Director
-                              approveLeave(
-                                request.userId,
-                                request.id,
-                                currentUser.id,
-                                remarks,
-                                false // isFinalDecision = false
-                              );
-                              router.push("/dashboard");
-                            }}
-                            className="flex-1 bg-white text-indigo-600 border border-indigo-200 py-2.5 rounded-xl font-bold hover:bg-indigo-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
-                          >
-                            Forward to Director
-                          </button>
+                          {/* Forward to Director Button - Only for HR */}
+                          {currentUser.role === "HR" && (
+                            <button
+                              onClick={() => {
+                                // Forward to Director
+                                approveLeave(
+                                  request.userId,
+                                  request.id,
+                                  currentUser.id,
+                                  remarks,
+                                  false // isFinalDecision = false
+                                );
+                                router.push("/dashboard");
+                              }}
+                              className="flex-1 bg-white text-indigo-600 border border-indigo-200 py-2.5 rounded-xl font-bold hover:bg-indigo-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
+                            >
+                              Forward to Director
+                            </button>
+                          )}
                           <button
                             onClick={handleReject}
                             className="px-6 py-2.5 bg-white text-red-600 border border-red-200 rounded-xl font-bold hover:bg-red-50 transition-all"

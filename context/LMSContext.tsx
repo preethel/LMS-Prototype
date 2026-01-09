@@ -249,7 +249,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
             const isTargetMD =
               nextUser?.role === "MD" || nextUser?.role === "Director";
 
-            if (isTargetMD && currentApproverUser?.role !== "HR") {
+            if (isTargetMD && actingForUser?.role !== "HR") {
               const hrUser = users.find((u) => u.role === "HR");
               if (hrUser) {
                 nextApproverId = hrUser.id;

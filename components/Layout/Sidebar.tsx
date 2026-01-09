@@ -86,28 +86,32 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* EMPLOYEE ASSIGNMENT GROUP */}
-        <div>
-          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Employee Assignment
-          </h3>
-          <div className="space-y-1">
-            <Link
-              href="/dashboard/employees"
-              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                pathname === "/dashboard/employees" ? activeClass : inactiveClass
-              }`}
-            >
-              Team Allocation
-            </Link>
-            <Link
-              href="#"
-              className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed hover:bg-gray-800/50"
-            >
-              Project Tracking
-            </Link>
+        {/* EMPLOYEE ASSIGNMENT GROUP - HR, Director, MD */}
+        {["HR", "Director", "MD"].includes(currentUser.role) && (
+          <div>
+            <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Employee Assignment
+            </h3>
+            <div className="space-y-1">
+              <Link
+                href="/dashboard/employees"
+                className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  pathname === "/dashboard/employees"
+                    ? activeClass
+                    : inactiveClass
+                }`}
+              >
+                Team Allocation
+              </Link>
+              <Link
+                href="#"
+                className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed hover:bg-gray-800/50"
+              >
+                Project Tracking
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* SYSTEM GROUP */}
         <div>
