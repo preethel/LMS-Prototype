@@ -46,6 +46,7 @@ export interface LeaveRequest {
         status: 'Approved' | 'Rejected' | 'Skipped' | 'Recommended' | 'Not Recommended';
         date: string;
         remarks?: string;
+        delegatedFromId?: string; // If this approval was made on behalf of another user
     }[];
     createdAt: string;
     daysCalculated: number; // Stored calculation

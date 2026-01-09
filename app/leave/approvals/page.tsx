@@ -146,6 +146,11 @@ export default function ApprovalsPage() {
                             >
                               {myAction?.status}
                             </span>
+                            {myAction?.delegatedFromId && (
+                              <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded w-fit mt-0.5">
+                                Via {getUserName(myAction.delegatedFromId)}
+                              </span>
+                            )}
                             {myAction?.remarks && (
                               <span className="text-xs text-gray-400 italic">
                                 &quot;{myAction.remarks}&quot;

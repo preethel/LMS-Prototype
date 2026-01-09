@@ -169,6 +169,16 @@ export default function LeaveRequestDetails({
         role: actor?.designation,
       };
 
+      // Add delegation note to remarks if present (or handle display otherwise)
+      // Since `remarks` is simple string, let's append or handle in render.
+      // Better: Add a `delegatedFrom` field to event object if I want clean structure.
+      if (step.delegatedFromId) {
+        const delegatedUser = users.find((u) => u.id === step.delegatedFromId);
+        if (delegatedUser) {
+          (event as any).delegatedFromName = delegatedUser.name;
+        }
+      }
+
       // Only show remarks if NOT the applicant
       if (currentUser.id !== request.userId) {
         event.remarks = step.remarks;
@@ -341,6 +351,11 @@ export default function LeaveRequestDetails({
                         <p className="text-[10px] text-gray-400 font-medium">
                           {event.role}
                         </p>
+                        {(event as any).delegatedFromName && (
+                          <p className="text-[10px] text-amber-600 bg-amber-50 px-1 rounded w-fit mx-auto mt-0.5">
+                            Via {(event as any).delegatedFromName}
+                          </p>
+                        )}
                       </div>
                     )}
                     {event.remarks && (

@@ -202,6 +202,8 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
             status: actionStatus as any, // Cast to avoid transient type errors before dependent file updates
             date: new Date().toISOString(),
             remarks,
+            delegatedFromId:
+              actingForId !== approverId ? actingForId : undefined, // Track if delegated
           },
         ];
 
