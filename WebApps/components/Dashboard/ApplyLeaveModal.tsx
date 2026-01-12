@@ -3,8 +3,8 @@
 import { useLMS } from "@/context/LMSContext";
 import { useNotification } from "@/context/NotificationContext";
 import { LeaveNature, LeaveType } from "@/lib/types";
-import { useMemo, useState, useRef } from "react";
 import { formatDate } from "@/lib/utils";
+import { useMemo, useRef, useState } from "react";
 
 interface ApplyLeaveModalProps {
   isOpen: boolean;
@@ -152,9 +152,10 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
     });
 
     // 2. Notify Approver
-    if (currentUser.approver) {
+    const approverId = currentUser.sequentialApprovers?.[0];
+    if (approverId) {
       addNotification({
-        userId: currentUser.approver,
+        userId: approverId,
         title: "New Leave Request",
         message: `${currentUser.name} has applied for ${type} leave.`,
         type: "info",
@@ -166,7 +167,7 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
     const hrUsers = users.filter((u) => u.role === "HR");
     hrUsers.forEach((hr) => {
       // Avoid duplicate if HR is also the approver (unlikely but possible)
-      if (hr.id !== currentUser.approver) {
+      if (hr.id !== approverId) {
         addNotification({
           userId: hr.id,
           title: "New Leave Request",
@@ -279,8 +280,9 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
                     className="text-indigo-600 focus:ring-indigo-500"
                   />
                   <span
-                    className={`font-medium ${type === "Regular" ? "text-indigo-700" : "text-gray-600"
-                      }`}
+                    className={`font-medium ${
+                      type === "Regular" ? "text-indigo-700" : "text-gray-600"
+                    }`}
                   >
                     Regular Leave (Days)
                   </span>
@@ -297,8 +299,9 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
                     className="text-indigo-600 focus:ring-indigo-500"
                   />
                   <span
-                    className={`font-medium ${type === "Short" ? "text-indigo-700" : "text-gray-600"
-                      }`}
+                    className={`font-medium ${
+                      type === "Short" ? "text-indigo-700" : "text-gray-600"
+                    }`}
                   >
                     Short Leave (Hours)
                   </span>

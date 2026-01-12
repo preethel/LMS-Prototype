@@ -254,9 +254,9 @@ export default function ReportsPage() {
                     <td className="px-6 py-4">
                       <span
                         className={`px-2 py-0.5 rounded text-xs font-bold border ${
-                          request.type === "Sick"
+                          request.nature === "Sick"
                             ? "bg-red-50 text-red-600 border-red-100"
-                            : request.type === "Casual"
+                            : request.nature === "Casual"
                             ? "bg-blue-50 text-blue-600 border-blue-100"
                             : "bg-purple-50 text-purple-600 border-purple-100"
                         }`}

@@ -6,6 +6,7 @@ import { formatDate, formatDuration } from "@/lib/utils";
 import { Calendar, Eye, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import ActionModal from "./ActionModal";
 import LeaveCalendarModal from "./LeaveCalendarModal";
 
 interface ApplicationsListProps {
@@ -27,6 +28,7 @@ export default function ApplicationsList({
     start: string;
     end: string;
   } | null>(null);
+  const [leaveToCancel, setLeaveToCancel] = useState<string | null>(null);
   const itemsPerPage = 10;
 
   if (!currentUser) return null;
@@ -172,15 +174,7 @@ export default function ApplicationsList({
                     </Link>
                     {["Pending", "Approved"].includes(leave.status) && (
                       <button
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "Are you sure you want to cancel this application?"
-                            )
-                          ) {
-                            cancelLeave(leave.id);
-                          }
-                        }}
+                        onClick={() => setLeaveToCancel(leave.id)}
                         className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
                         title="Cancel Application"
                       >
@@ -240,6 +234,21 @@ export default function ApplicationsList({
           endDate={calendarData.end}
         />
       )}
+
+      <ActionModal
+        isOpen={!!leaveToCancel}
+        onClose={() => setLeaveToCancel(null)}
+        title="Cancel Application"
+        message="Are you sure you want to cancel this application?"
+        type="danger"
+        confirmLabel="Yes, Cancel"
+        onConfirm={() => {
+          if (leaveToCancel) {
+            cancelLeave(leaveToCancel);
+            setLeaveToCancel(null);
+          }
+        }}
+      />
     </div>
   );
 }
