@@ -446,20 +446,27 @@ export default function LeaveRequestDetails({
                      </div>
                 </div>
                 <div>
-                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Attachments</span>
-                     <div className="bg-white border border-gray-200 rounded-lg p-3 h-32 overflow-y-auto">
+                     <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Attachments</span>
+                        {request.attachments && request.attachments.length > 0 && (
+                            <button onClick={() => setIsAttachmentsOpen(true)} className="text-xs text-indigo-600 font-bold hover:underline">
+                                View All
+                            </button>
+                        )}
+                     </div>
+                     <div className="bg-white border border-gray-200 rounded-lg p-3 h-25 overflow-y-auto">
                         {request.attachments && request.attachments.length > 0 ? (
                            <div className="flex flex-wrap gap-3">
                               {request.attachments.map((file, i) => (
                                   <div 
                                     key={i} 
-                                    className="w-16 h-16 bg-white border border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-indigo-50 transition-colors shadow-sm" 
+                                    className="relative w-16 h-16 bg-white border border-gray-200 rounded-lg flex flex-col items-center justify-center group overflow-hidden shadow-sm cursor-pointer hover:bg-indigo-50 transition-colors" 
                                     title={file.name || "Attachment"} 
                                     onClick={() => setIsAttachmentsOpen(true)}
                                   >
-                                      <span className="text-2xl">�</span>
-                                      <span className="text-[9px] text-gray-400 w-full px-1 text-center truncate mt-1">
-                                          file {i+1}
+                                      <span className="text-2xl">📄</span>
+                                      <span className="text-[9px] text-gray-500 w-full px-1 text-center truncate absolute bottom-1">
+                                          {file.size ? `${(file.size / 1024).toFixed(0)}KB` : file.name}
                                       </span>
                                   </div>
                               ))}
