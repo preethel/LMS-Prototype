@@ -1,16 +1,24 @@
 "use client";
 
 import { useLMS } from "@/context/LMSContext";
+import { ChevronDown, LogOut } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import ApplyLeaveModal from "../Dashboard/ApplyLeaveModal";
 import NotificationPopover from "../Notification/NotificationPopover";
 
 export default function Header() {
-  const { currentUser, leaves } = useLMS();
+  const { currentUser, leaves, logout } = useLMS();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
+
 
   const renderHeaderContent = () => {
     // Check if we are on a Request Details page
@@ -109,6 +117,42 @@ export default function Header() {
           + New Leave Application
         </button>
         <NotificationPopover />
+        
+        {/* Profile Dropdown */}
+        <div className="relative pl-4 border-l border-gray-200">
+            <button 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center space-x-3 focus:outline-none group"
+            >
+                 <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold border border-indigo-200 group-hover:border-indigo-300 transition-colors">
+                    {currentUser?.name?.charAt(0)}
+                 </div>
+                 <div className="text-right hidden md:block">
+                    <p className="text-sm font-medium text-gray-700 group-hover:text-indigo-700 transition-colors">{currentUser?.name}</p>
+                    <p className="text-xs text-gray-400">{currentUser?.role}</p>
+                 </div>
+                 <ChevronDown size={16} className="text-gray-400 group-hover:text-indigo-500 transition-colors" />
+            </button>
+
+            {isProfileOpen && (
+                <>
+                    <div className="fixed inset-0 z-10" onClick={() => setIsProfileOpen(false)}></div>
+                    <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-20 overflow-hidden ring-1 ring-black ring-opacity-5">
+                         <div className="px-4 py-3 border-b border-gray-50 md:hidden">
+                            <p className="text-sm font-medium text-gray-900">{currentUser?.name}</p>
+                            <p className="text-xs text-gray-500">{currentUser?.designation}</p>
+                         </div>
+                         <button 
+                            onClick={handleLogout}
+                            className="w-full flex items-center space-x-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                         >
+                            <LogOut size={16} />
+                            <span>Log Out</span>
+                         </button>
+                    </div>
+                </>
+            )}
+        </div>
       </div>
 
       <ApplyLeaveModal
