@@ -31,6 +31,7 @@ export default function LeaveRequestDetails({
   const [remarks, setRemarks] = useState("");
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { id } = use(params);
   const request = leaves.find((l) => l.id === id);
@@ -53,52 +54,141 @@ export default function LeaveRequestDetails({
   );
 
   // --- Actions ---
+  const handleAction = async (action: () => void, redirect: boolean = true) => {
+      setIsSubmitting(true);
+      action();
+      
+      // Artificial delay for UX
+      if (redirect) {
+          setTimeout(() => {
+              router.push("/leave/dashboard");
+          }, 1000);
+      } else {
+        setIsSubmitting(false); 
+      }
+  };
+
   const handleApprove = () => {
-    if (hasProcessed) {
-      editApproval(request.id, currentUser.id, "Approved", remarks);
-    } else {
-      approveLeave(request.userId, request.id, currentUser.id, remarks);
-    }
-
-    // Notify Requester
-    if (requester && requester.id !== currentUser.id) {
-      addNotification({
-        userId: requester.id,
-        title: "Leave Request Updated",
-        message: `Your leave request has been marked as Approved by ${currentUser.name}.`,
-        type: "success",
-        link: `/leave/requests/${request.id}`,
-      });
-    }
-
-    router.push("/leave/dashboard");
+    handleAction(() => {
+        if (hasProcessed) {
+          editApproval(request.id, currentUser.id, "Approved", remarks);
+        } else {
+          approveLeave(request.userId, request.id, currentUser.id, remarks);
+        }
+    
+        // Notify Requester
+        if (requester && requester.id !== currentUser.id) {
+          addNotification({
+            userId: requester.id,
+            title: "Leave Request Updated",
+            message: `Your leave request has been marked as Approved by ${currentUser.name}.`,
+            type: "success",
+            link: `/leave/requests/${request.id}`,
+          });
+        }
+    });
   };
 
   const handleReject = () => {
-    if (hasProcessed) {
-      editApproval(request.id, currentUser.id, "Rejected", remarks);
-    } else {
-      rejectLeave(request.id, currentUser.id, remarks);
-    }
-
-    // Notify Requester
-    if (requester && requester.id !== currentUser.id) {
-      addNotification({
-        userId: requester.id,
-        title: "Leave Request Rejected",
-        message: `Your leave request has been Rejected by ${currentUser.name}.`,
-        type: "error",
-        link: `/leave/requests/${request.id}`,
-      });
-    }
-
-    router.push("/leave/dashboard");
+    handleAction(() => {
+        if (hasProcessed) {
+          editApproval(request.id, currentUser.id, "Rejected", remarks);
+        } else {
+          rejectLeave(request.id, currentUser.id, remarks);
+        }
+    
+        // Notify Requester
+        if (requester && requester.id !== currentUser.id) {
+          addNotification({
+            userId: requester.id,
+            title: "Leave Request Rejected",
+            message: `Your leave request has been Rejected by ${currentUser.name}.`,
+            type: "error",
+            link: `/leave/requests/${request.id}`,
+          });
+        }
+    });
   };
 
   const handleSkip = () => {
-    skipLeave(request.id, currentUser.id);
-    router.push("/leave/dashboard");
+    handleAction(() => {
+        skipLeave(request.id, currentUser.id);
+    });
   };
+  
+ // ... (rest of helper functions) ...
+
+                {/* Inside JSX for Buttons */ }
+                {/* ... inside Render ... */}
+                                    <div className="w-full md:w-auto flex flex-row gap-2 shrink-0">
+                        {hasProcessed ? (
+                            <>
+                                <button
+                                    onClick={handleApprove}
+                                    disabled={hasProcessed.status === "Approved" || isSubmitting}
+                                    className={`flex-1 md:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+                                        hasProcessed.status === "Approved"
+                                            ? "bg-green-100 text-green-700 cursor-not-allowed"
+                                            : "bg-green-600 text-white hover:bg-green-700 shadow-sm disabled:opacity-50 disabled:cursor-wait"
+                                    }`}
+                                >
+                                    {isSubmitting ? "Processing..." : (hasProcessed.status === "Approved" ? "Approved" : "Change to Approve")}
+                                </button>
+                                <button
+                                    onClick={handleReject}
+                                    disabled={hasProcessed.status === "Rejected" || isSubmitting}
+                                    className={`flex-1 md:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+                                        hasProcessed.status === "Rejected"
+                                            ? "bg-red-100 text-red-700 cursor-not-allowed"
+                                            : "bg-white text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-50 disabled:cursor-wait"
+                                    }`}
+                                >
+                                    {isSubmitting ? "Processing..." : (hasProcessed.status === "Rejected" ? "Rejected" : "Change to Reject")}
+                                </button>
+                            </>
+                        ) : (
+                           <>
+                             {/* Action Buttons Group */}
+                             {isFinalAuthority ? (
+                                <>
+                                  <button onClick={() => {
+                                      handleAction(() => approveLeave(request.userId, request.id, currentUser.id, remarks, true));
+                                  }} disabled={isSubmitting} className="flex-1 md:flex-none px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 shadow-sm disabled:opacity-50 disabled:cursor-wait">
+                                     {isSubmitting ? "Appoving..." : "Approve"}
+                                  </button>
+                                  
+                                  {currentUser.role === "HR" && (
+                                     <button 
+                                        onClick={() => {
+                                            handleAction(() => approveLeave(request.userId, request.id, currentUser.id, remarks, false));
+                                        }}
+                                        disabled={isSubmitting}
+                                        className="flex-1 md:flex-none px-4 py-2 bg-white text-indigo-600 border border-indigo-200 text-sm font-bold rounded-lg hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-wait"
+                                     >
+                                        {isSubmitting ? "Processing..." : "Forward to Director"}
+                                     </button>
+                                  )}
+
+                                  <button onClick={handleReject} disabled={isSubmitting} className="flex-1 md:flex-none px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-bold rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-wait">
+                                     {isSubmitting ? "Rejecting..." : "Reject"}
+                                  </button>
+                                </>
+                             ) : (
+                                <>
+                                  <button onClick={handleApprove} disabled={isSubmitting} className="flex-1 md:flex-none px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 shadow-sm disabled:opacity-50 disabled:cursor-wait">
+                                     {isSubmitting ? "Processing..." : "Approve"}
+                                  </button>
+                                  <button onClick={handleReject} disabled={isSubmitting} className="flex-1 md:flex-none px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-bold rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-wait">
+                                     {isSubmitting ? "Processing..." : "Reject"}
+                                  </button>
+                                   <button onClick={handleSkip} disabled={isSubmitting} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:cursor-wait">
+                                      {isSubmitting ? "..." : "Forward"}
+                                    </button>
+                                </>
+                             )}
+                           </>
+                        )}
+                    </div>
 
   // --- Timeline Logic ---
   const getTimelineEvents = () => {
