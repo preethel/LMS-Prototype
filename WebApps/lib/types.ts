@@ -11,6 +11,8 @@ export interface User {
     designation: string;
     role: 'Employee' | 'TeamLead' | 'Manager' | 'HR' | 'MD' | 'Director';
     delegatedTo?: string; // ID of the user to whom approval authority is delegated
+    delegationStartDate?: string; // ISO Date Time string
+    delegationEndDate?: string; // ISO Date Time string
     sequentialApprovers?: string[]; // Ordered list of approver IDs for sequential flow
 }
 

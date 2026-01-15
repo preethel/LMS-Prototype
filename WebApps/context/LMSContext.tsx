@@ -2,12 +2,12 @@
 
 import { MOCK_BALANCES, MOCK_LEAVES, MOCK_USERS } from "@/lib/mockData";
 import {
-  Attachment,
-  LeaveBalance,
-  LeaveNature,
-  LeaveRequest,
-  LeaveType,
-  User,
+    Attachment,
+    LeaveBalance,
+    LeaveNature,
+    LeaveRequest,
+    LeaveType,
+    User,
 } from "@/lib/types";
 import { ReactNode, createContext, useContext, useState } from "react";
 
@@ -48,7 +48,12 @@ interface LMSContextType {
     newRemarks: string
   ) => void;
   updateUnpaidLeaveDays: (leaveId: string, days: number) => void;
-  setDelegate: (userId: string, delegateId: string | null) => void;
+  setDelegate: (
+    userId: string,
+    delegateId: string | null,
+    startDate?: string,
+    endDate?: string
+  ) => void;
   updateUserApprovers: (userId: string, approverIds: string[]) => void;
 }
 
@@ -83,24 +88,37 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
 
     // Calculate days
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-    const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    // +1 because if start=10th, end=10th, it is 1 day.
-
-    // Logic for Short Leave (Mock: 0 days, just hours, but for simplicity let's track hours separately if needed)
-    // Requirement: "Short Leave is always calculated in hours"
-    // Requirement: "1 day = 8 hours"
-
     // Calculate duration
     let quantity = 0;
-    if (type === "Short" && timeRange) {
+
+    // Check if it's a "Regular" leave with Time (indicated by 'T' in ISO string)
+    const isRegularWithTime = type === "Regular" && start.includes("T") && end.includes("T");
+
+    if (isRegularWithTime) {
+       const startDate = new Date(start);
+       const endDate = new Date(end);
+       const diffTime = endDate.getTime() - startDate.getTime();
+       // Exact Difference in Days (Float) e.g. 0.5 for half day
+       const days = diffTime / (1000 * 60 * 60 * 24);
+       quantity = Number(days.toFixed(2));
+    } else if (type === "Regular") {
+         // Standard Day-based inclusive calculation
+         const startDate = new Date(start);
+         const endDate = new Date(end);
+         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+         // +1 because if start=10th, end=10th, it is 1 day.
+         const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+         quantity = days;
+    } else if (type === "Short" && timeRange) {
       const [startH, startM] = timeRange.start.split(":").map(Number);
       const [endH, endM] = timeRange.end.split(":").map(Number);
       quantity = endH - startH + (endM - startM) / 60; // Hours
     } else {
-      quantity = days; // Days
+       // Fallback logic
+       const startDate = new Date(start);
+       const endDate = new Date(end);
+       const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+       quantity = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     }
 
     // Immediate Balance Deduction
@@ -449,11 +467,22 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getPendingApprovals = (approverId: string) => {
-    const approver = users.find((u) => u.id === approverId);
+    // const approver = users.find((u) => u.id === approverId);
 
     // Find all users who have delegated TO this approverId
+    // AND where the current time is within the delegation window
+    const now = new Date();
     const delegators = users
-      .filter((u) => u.delegatedTo === approverId)
+      .filter((u) => {
+        if (u.delegatedTo !== approverId) return false;
+        if (u.delegationStartDate && u.delegationEndDate) {
+          const start = new Date(u.delegationStartDate);
+          const end = new Date(u.delegationEndDate);
+          return now >= start && now <= end;
+        }
+        // If no dates set but delegatedTo is set, assume active (backward compatibility or manual toggle without dates)
+        return true;
+      })
       .map((u) => u.id);
 
     return leaves.filter(
@@ -464,16 +493,35 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  const setDelegate = (userId: string, delegateId: string | null) => {
+  const setDelegate = (
+    userId: string,
+    delegateId: string | null,
+    startDate?: string,
+    endDate?: string
+  ) => {
     setUsers((prevUsers) =>
       prevUsers.map((u) =>
-        u.id === userId ? { ...u, delegatedTo: delegateId || undefined } : u
+        u.id === userId
+          ? {
+              ...u,
+              delegatedTo: delegateId || undefined,
+              delegationStartDate: startDate,
+              delegationEndDate: endDate,
+            }
+          : u
       )
     );
     // Also update current user if it's them
     if (currentUser?.id === userId) {
       setCurrentUser((prev) =>
-        prev ? { ...prev, delegatedTo: delegateId || undefined } : null
+        prev
+          ? {
+              ...prev,
+              delegatedTo: delegateId || undefined,
+              delegationStartDate: startDate,
+              delegationEndDate: endDate,
+            }
+          : null
       );
     }
   };
