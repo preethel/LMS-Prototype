@@ -87,9 +87,9 @@ export default function Header() {
     } else if (pathname.includes("/notifications")) {
       title = "Notifications";
       description = "Stay updated with latest activities";
-    } else if (pathname.includes("/settings")) {
-      title = "Settings";
-      description = "Configure your preferences";
+    } else if (pathname.includes("/delegation")) {
+      title = "Approval Delegation";
+      description = "Manage your approval authority and delegation history.";
     } else if (pathname.includes("/employees")) {
       title = "Team Allocation";
       description = "Manage employee settings and approvals";

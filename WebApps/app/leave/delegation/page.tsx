@@ -3,16 +3,30 @@
 import { useLMS } from "@/context/LMSContext";
 import { formatDateTime } from "@/lib/utils";
 import { Ban, Check, Clock, Edit2, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 // Helper Component for DateTime Input (DD-MM-YYYY HH:MM AM/PM)
 const DateTimeInput = ({ value, onChange, min, autoFocus = false }: { value: string, onChange: (val: string) => void, min?: string, autoFocus?: boolean }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const handleContainerClick = () => {
+        if (inputRef.current) {
+            try {
+                inputRef.current.showPicker();
+            } catch {
+                // Fallback for browsers that don't support showPicker (or if blocked)
+                inputRef.current.focus();
+            }
+        }
+    };
+
     return (
-        <div className="relative group">
+        <div className="relative group" onClick={handleContainerClick}>
             <div className={`w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm flex items-center justify-between ${!value ? 'text-gray-400' : 'text-gray-900'} focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-colors`}>
-                <span>{value ? formatDateTime(value) : "Select Date & Time"}</span>
-                <span className="text-gray-400 text-xs">📅</span>
+                <span className="whitespace-nowrap overflow-hidden text-ellipsis">{value ? formatDateTime(value) : "Select Date & Time"}</span>
+                <span className="text-gray-400 text-xs ml-2">📅</span>
             </div>
             <input
+                ref={inputRef}
                 type="datetime-local"
                 value={value}
                 min={min}
@@ -96,15 +110,6 @@ export default function DelegationPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-           Approval Delegation
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Manage your approval authority and delegation history.
-        </p>
-      </div>
-
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT COLUMN: Controls */}
         <div className="space-y-6 lg:col-span-1">
@@ -328,7 +333,7 @@ export default function DelegationPage() {
                                                          {/* Extension UI (Inline Float) */}
                                                         {isExtending && (
                                                             <div className="flex items-center gap-2 bg-white border border-blue-200 p-1.5 rounded-lg shadow-lg relative z-10 animate-in fade-in zoom-in-95">
-                                                                <div className="w-40 relative">
+                                                                <div className="w-56 relative">
                                                                     <DateTimeInput 
                                                                         value={extensionDate}
                                                                         onChange={setExtensionDate}
