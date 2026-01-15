@@ -44,6 +44,7 @@ interface LMSContextType {
   cancelDelegation: (userId: string, historyId: string) => void;
   stopDelegation: (userId: string, historyId: string) => void;
   extendDelegation: (userId: string, historyId: string, newEndDate: string) => void;
+  updateDelegation: (userId: string, historyId: string, delegateId: string, startDate: string, endDate: string) => void;
   updateUserApprovers: (userId: string, approverIds: string[]) => void;
 
   cancelLeave: (leaveId: string) => void;
