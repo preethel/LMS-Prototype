@@ -89,12 +89,12 @@ export default function Sidebar() {
               </Link>
             )}
             <Link
-              href="/leave/settings"
+              href="/leave/delegation"
               className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                pathname === "/leave/settings" ? activeClass : inactiveClass
+                pathname === "/leave/delegation" ? activeClass : inactiveClass
               }`}
             >
-              Settings
+              Approval Delegation
             </Link>
           </div>
         </div>

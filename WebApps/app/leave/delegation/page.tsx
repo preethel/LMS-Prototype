@@ -4,8 +4,27 @@ import { useLMS } from "@/context/LMSContext";
 import { formatDateTime } from "@/lib/utils";
 import { Ban, Check, Clock, Edit2, Trash2, X } from "lucide-react";
 import { useState } from "react";
+// Helper Component for DateTime Input (DD-MM-YYYY HH:MM AM/PM)
+const DateTimeInput = ({ value, onChange, min, autoFocus = false }: { value: string, onChange: (val: string) => void, min?: string, autoFocus?: boolean }) => {
+    return (
+        <div className="relative group">
+            <div className={`w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm flex items-center justify-between ${!value ? 'text-gray-400' : 'text-gray-900'} focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-colors`}>
+                <span>{value ? formatDateTime(value) : "Select Date & Time"}</span>
+                <span className="text-gray-400 text-xs">📅</span>
+            </div>
+            <input
+                type="datetime-local"
+                value={value}
+                min={min}
+                onChange={(e) => onChange(e.target.value)}
+                autoFocus={autoFocus}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+        </div>
+    );
+};
 
-export default function SettingsPage() {
+export default function DelegationPage() {
   const { currentUser, users, addDelegation, cancelDelegation, stopDelegation, extendDelegation, updateDelegation } = useLMS();
   
   // Local state for the "Add Delegation" form
@@ -64,7 +83,7 @@ export default function SettingsPage() {
     }
   };
 
-  const activeDelegations = currentUser.delegationHistory?.filter(h => {
+  const activeDelegations = currentUser.delegationHistory?.filter((h) => {
      const now = new Date();
      const start = new Date(h.startDate);
      const end = new Date(h.endDate);
@@ -77,7 +96,6 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
            Approval Delegation
@@ -87,11 +105,9 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT COLUMN: Controls */}
         <div className="space-y-6 lg:col-span-1">
-            
             {/* 1. Status Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="p-4 border-b border-gray-100 bg-gray-50/50">
@@ -133,7 +149,7 @@ export default function SettingsPage() {
                     )}
                 </div>
             </div>
-
+            
             {/* 2. Schedule Form Card */}
             <div className={`bg-white rounded-xl shadow-sm border-2 ${editingId ? 'border-purple-200 ring-2 ring-purple-50' : 'border-gray-200'} overflow-hidden transition-all`}>
                 <div className={`p-4 border-b ${editingId ? 'bg-purple-50 border-purple-100' : 'bg-gray-50/50 border-gray-100'} flex justify-between items-center`}>
@@ -172,25 +188,19 @@ export default function SettingsPage() {
                                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                                     Start Date
                                 </label>
-                                <input
-                                    type="datetime-local"
-                                    required
+                                <DateTimeInput 
                                     value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm"
+                                    onChange={setStartDate}
                                 />
                              </div>
                              <div>
                                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                                     End Date
                                 </label>
-                                <input
-                                    type="datetime-local"
-                                    required
+                                <DateTimeInput 
                                     value={endDate}
+                                    onChange={setEndDate}
                                     min={startDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm"
                                 />
                              </div>
                         </div>
@@ -231,6 +241,7 @@ export default function SettingsPage() {
                                     {[...currentUser.delegationHistory]
                                     .sort((a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime())
                                     .map((history) => {
+                                        // ... existing calculations ...
                                         const delegateUser = users.find((u) => u.id === history.delegatedToId);
                                         const start = new Date(history.startDate);
                                         const end = new Date(history.endDate);
@@ -252,10 +263,12 @@ export default function SettingsPage() {
 
                                         return (
                                             <tr key={history.id} className={`hover:bg-gray-50 transition-colors ${isEditing ? 'bg-purple-50 hover:bg-purple-50' : ''}`}>
+                                                {/* ... Cells ... */}
+                                                
                                                 <td className="px-4 py-3 align-top">
-                                                     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${statusColor}`}>
-                                                        {status}
-                                                     </span>
+                                                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${statusColor}`}>
+                                                       {status}
+                                                    </span>
                                                 </td>
                                                 <td className="px-4 py-3 align-top">
                                                     <div className="font-medium text-gray-900 text-sm">
@@ -315,12 +328,13 @@ export default function SettingsPage() {
                                                          {/* Extension UI (Inline Float) */}
                                                         {isExtending && (
                                                             <div className="flex items-center gap-2 bg-white border border-blue-200 p-1.5 rounded-lg shadow-lg relative z-10 animate-in fade-in zoom-in-95">
-                                                                <input 
-                                                                    type="datetime-local" 
-                                                                    className="text-xs border border-gray-300 rounded px-2 py-1 w-36 outline-none focus:border-blue-500"
-                                                                    onChange={(e) => setExtensionDate(e.target.value)}
-                                                                    autoFocus
-                                                                />
+                                                                <div className="w-40 relative">
+                                                                    <DateTimeInput 
+                                                                        value={extensionDate}
+                                                                        onChange={setExtensionDate}
+                                                                        autoFocus
+                                                                    />
+                                                                </div>
                                                                 <div className="flex gap-1">
                                                                     <button 
                                                                         onClick={() => handleExtend(history.id)}
