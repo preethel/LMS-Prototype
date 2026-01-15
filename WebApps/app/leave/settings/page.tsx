@@ -1,48 +1,56 @@
 "use client";
 
 import { useLMS } from "@/context/LMSContext";
+import { formatDateTime } from "@/lib/utils";
 import { useState } from "react";
 
 export default function SettingsPage() {
-  const { currentUser, users, setDelegate } = useLMS();
-  const [isActive, setIsActive] = useState<boolean>(!!currentUser?.delegatedTo);
-  const [selectedDelegate, setSelectedDelegate] = useState<string>(
-    currentUser?.delegatedTo || ""
-  );
-  const [startDate, setStartDate] = useState<string>(
-    currentUser?.delegationStartDate || ""
-  );
-  const [endDate, setEndDate] = useState<string>(
-    currentUser?.delegationEndDate || ""
-  );
+  const { currentUser, users, addDelegation, cancelDelegation, stopDelegation, extendDelegation } = useLMS();
+  
+  // Local state for the "Add Delegation" form
+  const [selectedDelegate, setSelectedDelegate] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
+  // State for Extension
+  const [extendingId, setExtendingId] = useState<string | null>(null);
+  const [extensionDate, setExtensionDate] = useState<string>("");
 
   if (!currentUser) {
     return <div className="p-8">Please log in to access settings.</div>;
   }
 
-  // Filter potential delegates:
-  // 1. Exclude self.
-  // 2. Ideally exclude people lower in hierarchy if strictly hierarchical, but for flexibility often peers or anyone is allowed.
-  // 3. For prototype, let's allow anyone except self.
   const potentialDelegates = users.filter((u) => u.id !== currentUser.id);
 
-  const handleToggle = (newState: boolean) => {
-    setIsActive(newState);
-    if (!newState) {
-      // Turned OFF: Disable delegation immediately
-      setDelegate(currentUser.id, null);
+  const handleAddDelegation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedDelegate && startDate && endDate) {
+      addDelegation(currentUser.id, selectedDelegate, startDate, endDate);
+      // Reset form
+      setSelectedDelegate("");
+      setStartDate("");
+      setEndDate("");
     }
   };
 
-  const updateSettings = (delegateId: string, start: string, end: string) => {
-    if (delegateId) {
-      setDelegate(currentUser.id, delegateId, start, end);
+  const handleExtend = (historyId: string) => {
+    if (extensionDate) {
+      extendDelegation(currentUser.id, historyId, extensionDate);
+      setExtendingId(null);
+      setExtensionDate("");
     }
   };
 
-  const currentDelegateUser = users.find(
-    (u) => u.id === currentUser.delegatedTo
-  );
+  const activeDelegations = currentUser.delegationHistory?.filter(h => {
+     const now = new Date();
+     const start = new Date(h.startDate);
+     const end = new Date(h.endDate);
+     return now >= start && now <= end;
+  }) || [];
+
+  const currentDelegateUser = activeDelegations.length > 0 
+    ? users.find(u => u.id === activeDelegations[0].delegatedToId) 
+    : null;
 
   return (
     <div>
@@ -56,67 +64,56 @@ export default function SettingsPage() {
           </h2>
           <p className="text-sm text-gray-500 mt-1 ml-9">
             Delegate your approval authority to another employee when you are
-            unavailable.
+            unavailable. You can schedule multiple delegations.
           </p>
         </div>
 
-        <div className="p-8 space-y-6">
-          {currentUser.delegatedTo && currentDelegateUser ? (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-              <div className="text-amber-500 mt-0.5">⚠️</div>
-              <div>
-                <p className="text-sm font-bold text-amber-800">
-                  Delegation Active
-                </p>
-                <p className="text-sm text-amber-700 mt-0.5">
-                  Your approval rights are currently delegated to{" "}
-                  <span className="font-bold">{currentDelegateUser.name}</span>{" "}
-                  ({currentDelegateUser.designation}). They can view and approve
-                  requests on your behalf.
-                </p>
+        <div className="p-8 space-y-8">
+          {/* Active Status Banner */}
+          {currentDelegateUser && activeDelegations[0] ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                 <div className="text-amber-500 mt-0.5">⚠️</div>
+                 <div>
+                    <p className="text-sm font-bold text-amber-800">
+                      Delegation Active
+                    </p>
+                    <p className="text-sm text-amber-700 mt-0.5">
+                      Your approval rights are currently delegated to{" "}
+                      <span className="font-bold">{currentDelegateUser.name}</span>{" "}
+                      ({currentDelegateUser.designation}).
+                    </p>
+                 </div>
               </div>
+               <button
+                 onClick={() => stopDelegation(currentUser.id, activeDelegations[0].id)}
+                 className="px-3 py-1.5 bg-white border border-amber-300 text-amber-700 text-xs font-bold rounded shadow-sm hover:bg-amber-50 hover:text-amber-800 transition-colors"
+               >
+                 Stop Delegation
+               </button>
             </div>
           ) : (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <p className="text-sm text-gray-600">
-                You are currently managing your own approvals. No delegation is
-                active.
+                You are currently managing your own approvals. No delegation is active right now.
               </p>
             </div>
           )}
 
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-sm font-bold text-gray-700">
-                Enable Delegation
-              </label>
-              <div
-                className={`w-14 h-7 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer transition-colors ${
-                  isActive ? "bg-purple-600" : ""
-                }`}
-                onClick={() => handleToggle(!isActive)}
-              >
-                <div
-                  className={`bg-white w-5 h-5 rounded-full shadow-md transform duration-300 ease-in-out ${
-                    isActive ? "translate-x-7" : ""
-                  }`}
-                ></div>
-              </div>
-            </div>
-
-            {isActive && (
-              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Add Delegation Form */}
+          <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+             <h3 className="text-md font-bold text-gray-800 mb-4">
+                Schedule New Delegation
+             </h3>
+             <form onSubmit={handleAddDelegation} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Delegate To
                   </label>
                   <select
                     value={selectedDelegate}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setSelectedDelegate(val);
-                      updateSettings(val, startDate, endDate);
-                    }}
+                    onChange={(e) => setSelectedDelegate(e.target.value)}
+                    required
                     className="w-full max-w-md px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-shadow"
                   >
                     <option value="">-- Select Employee --</option>
@@ -135,12 +132,9 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="datetime-local"
+                      required
                       value={startDate}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setStartDate(val);
-                        updateSettings(selectedDelegate, val, endDate);
-                      }}
+                      onChange={(e) => setStartDate(e.target.value)}
                       className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
                     />
                   </div>
@@ -150,21 +144,152 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="datetime-local"
+                      required
                       value={endDate}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setEndDate(val);
-                        updateSettings(selectedDelegate, startDate, val);
-                      }}
+                      min={startDate}
+                      onChange={(e) => setEndDate(e.target.value)}
                       className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
                     />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Approvals will only be delegated during this time window. Only
-                  pending requests matching this window will be visible to the
-                  delegate.
-                </p>
+
+                 <button
+                  type="submit"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors shadow-sm"
+                >
+                  Add Delegation
+                </button>
+             </form>
+          </div>
+
+          {/* Delegation History / Schedule List */}
+          <div className="pt-2 border-t border-gray-100">
+            <h3 className="text-md font-bold text-gray-800 mb-4">
+              Delegation Schedule & History
+            </h3>
+            {currentUser.delegationHistory && currentUser.delegationHistory.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left text-gray-500">
+                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Delegated To</th>
+                      <th className="px-4 py-3">Period</th>
+                      <th className="px-4 py-3">Assigned At</th>
+                      <th className="px-4 py-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...currentUser.delegationHistory]
+                      .sort((a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime())
+                      .map((history) => {
+                      const delegateUser = users.find(
+                        (u) => u.id === history.delegatedToId
+                      );
+                      const start = new Date(history.startDate);
+                      const end = new Date(history.endDate);
+                      // Use new standard formatter
+                      const assigned = formatDateTime(history.assignedAt);
+                      const now = new Date();
+
+                      let status = "Past";
+                      let statusColor = "bg-gray-100 text-gray-600";
+                      
+                      if (now >= start && now <= end) {
+                          status = "Active";
+                          statusColor = "bg-green-100 text-green-700";
+                      } else if (now < start) {
+                          status = "Scheduled";
+                          statusColor = "bg-blue-100 text-blue-700";
+                      }
+
+                      const isExtending = extendingId === history.id;
+
+                      return (
+                        <tr key={history.id} className="bg-white border-b hover:bg-gray-50">
+                           <td className="px-4 py-3">
+                              <span className={`px-2 py-1 rounded-full text-xs font-bold ${statusColor}`}>
+                                  {status}
+                              </span>
+                          </td>
+                          <td className="px-4 py-3 font-medium text-gray-900">
+                            {delegateUser ? delegateUser.name : "Unknown User"}
+                            <span className="block text-xs text-gray-400 font-normal">
+                              {delegateUser?.designation}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col">
+                              <span>From: {formatDateTime(start)}</span>
+                              <span className="text-gray-400">To: {formatDateTime(end)}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-400">
+                            {assigned}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                                {/* Actions based on Status */}
+                                {status === "Scheduled" && (
+                                    <button 
+                                      onClick={() => cancelDelegation(currentUser.id, history.id)}
+                                      className="text-red-500 hover:text-red-700 text-xs font-medium hover:underline"
+                                    >
+                                        Delete
+                                    </button>
+                                )}
+
+                                {status === "Active" && !isExtending && (
+                                    <>
+                                      <button 
+                                        onClick={() => stopDelegation(currentUser.id, history.id)}
+                                        className="text-amber-600 hover:text-amber-800 text-xs font-medium hover:underline"
+                                      >
+                                          Stop
+                                      </button>
+                                      <span className="text-gray-300">|</span>
+                                      <button 
+                                        onClick={() => setExtendingId(history.id)}
+                                        className="text-blue-600 hover:text-blue-800 text-xs font-medium hover:underline"
+                                      >
+                                          Extend
+                                      </button>
+                                    </>
+                                )}
+
+                                {/* Extension UI */}
+                                {isExtending && (
+                                   <div className="flex items-center gap-1 animate-in fade-in slide-in-from-left-2">
+                                       <input 
+                                          type="datetime-local" 
+                                          className="text-xs border rounded px-1 py-0.5 w-32"
+                                          onChange={(e) => setExtensionDate(e.target.value)}
+                                       />
+                                       <button 
+                                          onClick={() => handleExtend(history.id)}
+                                          className="text-green-600 text-xs font-bold hover:underline"
+                                       >
+                                         ✔
+                                       </button>
+                                       <button 
+                                          onClick={() => setExtendingId(null)}
+                                          className="text-gray-500 text-xs hover:underline"
+                                       >
+                                         ✖
+                                       </button>
+                                   </div>
+                                )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500 italic">
+                No delegation history available.
               </div>
             )}
           </div>

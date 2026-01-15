@@ -467,22 +467,16 @@ export default function LeaveRequestDetails({
                 Start Date
               </label>
               <p className="text-lg font-medium text-gray-900">
-                {formatDate(request.startDate)}
+                {formatDateTime(request.startDate)}
               </p>
-              {request.startTime && (
-                <p className="text-sm text-gray-500">{request.startTime}</p>
-              )}
             </div>
             <div>
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
                 End Date
               </label>
               <p className="text-lg font-medium text-gray-900">
-                {formatDate(request.endDate)}
+                {formatDateTime(request.endDate)}
               </p>
-              {request.endTime && (
-                <p className="text-sm text-gray-500">{request.endTime}</p>
-              )}
             </div>
             <div>
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">

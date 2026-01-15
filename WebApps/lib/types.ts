@@ -14,6 +14,15 @@ export interface User {
     delegationStartDate?: string; // ISO Date Time string
     delegationEndDate?: string; // ISO Date Time string
     sequentialApprovers?: string[]; // Ordered list of approver IDs for sequential flow
+    delegationHistory?: DelegationHistory[];
+}
+
+export interface DelegationHistory {
+    id: string;
+    delegatedToId: string;
+    startDate: string; // ISO Date Time
+    endDate: string; // ISO Date Time
+    assignedAt: string; // ISO Date Time
 }
 
 export interface LeaveBalance {

@@ -2,12 +2,13 @@
 
 import { MOCK_BALANCES, MOCK_LEAVES, MOCK_USERS } from "@/lib/mockData";
 import {
-    Attachment,
-    LeaveBalance,
-    LeaveNature,
-    LeaveRequest,
-    LeaveType,
-    User,
+  Attachment,
+  DelegationHistory,
+  LeaveBalance,
+  LeaveNature,
+  LeaveRequest,
+  LeaveType,
+  User
 } from "@/lib/types";
 import { ReactNode, createContext, useContext, useState } from "react";
 
@@ -37,6 +38,13 @@ interface LMSContextType {
     isFinalDecision?: boolean
   ) => void;
   rejectLeave: (leaveId: string, approverId: string, remarks?: string) => void;
+  // setDelegate: (userId: string, delegateId: string | null, start?: string, end?: string) => void; // Deprecated
+  addDelegation: (userId: string, delegateId: string, startDate: string, endDate: string) => void;
+  cancelDelegation: (userId: string, historyId: string) => void;
+  stopDelegation: (userId: string, historyId: string) => void;
+  extendDelegation: (userId: string, historyId: string, newEndDate: string) => void;
+  updateUserApprovers: (userId: string, approverIds: string[]) => void;
+
   cancelLeave: (leaveId: string) => void;
   getPendingApprovals: (approverId: string) => LeaveRequest[];
   getApprovalHistory: (approverId: string) => LeaveRequest[];
@@ -48,13 +56,7 @@ interface LMSContextType {
     newRemarks: string
   ) => void;
   updateUnpaidLeaveDays: (leaveId: string, days: number) => void;
-  setDelegate: (
-    userId: string,
-    delegateId: string | null,
-    startDate?: string,
-    endDate?: string
-  ) => void;
-  updateUserApprovers: (userId: string, approverIds: string[]) => void;
+
 }
 
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
@@ -466,22 +468,30 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  const getPendingApprovals = (approverId: string) => {
-    // const approver = users.find((u) => u.id === approverId);
+  /* 
+    DELEGATION LOGIC REFACTOR:
+    - Replaced single-field delegation with history-based scheduling.
+    - getPendingApprovals now checks the delegationHistory array.
+    - addDelegation appends to history.
+    - cancelDelegation removes from history.
+  */
 
-    // Find all users who have delegated TO this approverId
-    // AND where the current time is within the delegation window
+  const getPendingApprovals = (approverId: string) => {
     const now = new Date();
     const delegators = users
       .filter((u) => {
-        if (u.delegatedTo !== approverId) return false;
-        if (u.delegationStartDate && u.delegationEndDate) {
-          const start = new Date(u.delegationStartDate);
-          const end = new Date(u.delegationEndDate);
+        // Check if any history entry makes this user delegated to 'approverId' right now
+        // A user is delegated IF:
+        // 1. They have a history entry where delegatedToId === approverId
+        // 2. AND current time is within [startDate, endDate]
+        if (!u.delegationHistory) return false;
+
+        return u.delegationHistory.some(h => {
+          if (h.delegatedToId !== approverId) return false;
+          const start = new Date(h.startDate);
+          const end = new Date(h.endDate);
           return now >= start && now <= end;
-        }
-        // If no dates set but delegatedTo is set, assume active (backward compatibility or manual toggle without dates)
-        return true;
+        });
       })
       .map((u) => u.id);
 
@@ -493,38 +503,127 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  const setDelegate = (
+  // Renamed from setDelegate to better reflect "Queue/Schedule" nature
+  const addDelegation = (
     userId: string,
-    delegateId: string | null,
-    startDate?: string,
-    endDate?: string
+    delegateId: string,
+    startDate: string,
+    endDate: string
   ) => {
+    // Helper to update user object
+    const updatedUser = (u: typeof currentUser) => {
+      if(!u) return u;
+      const newHistory = u.delegationHistory || [];
+      const entry: DelegationHistory = {
+        id: `dh-${Date.now()}`,
+        delegatedToId: delegateId,
+        startDate,
+        endDate,
+        assignedAt: new Date().toISOString(),
+      };
+      
+      return {
+        ...u,
+        delegationHistory: [entry, ...newHistory],
+        // Deprecated fields cleared
+        delegatedTo: undefined,
+        delegationStartDate: undefined,
+        delegationEndDate: undefined
+      };
+    };
+
     setUsers((prevUsers) =>
-      prevUsers.map((u) =>
-        u.id === userId
-          ? {
-              ...u,
-              delegatedTo: delegateId || undefined,
-              delegationStartDate: startDate,
-              delegationEndDate: endDate,
-            }
-          : u
-      )
+      prevUsers.map((u) => (u.id === userId ? updatedUser(u)! : u))
     );
-    // Also update current user if it's them
+
     if (currentUser?.id === userId) {
-      setCurrentUser((prev) =>
-        prev
-          ? {
-              ...prev,
-              delegatedTo: delegateId || undefined,
-              delegationStartDate: startDate,
-              delegationEndDate: endDate,
-            }
-          : null
-      );
+      setCurrentUser((prev) => updatedUser(prev));
     }
   };
+
+  const cancelDelegation = (userId: string, historyId: string) => {
+      // Logic: Only defined "Future" or "Scheduled" delegations can be cancelled (deleted).
+      // Active or Past cannot be deleted to preserve history.
+      const updatedUser = (u: typeof currentUser) => {
+        if(!u) return u;
+        const now = new Date();
+        const history = u.delegationHistory || [];
+        
+        // Filter out ONLY if it hasn't started yet
+        const newHistory = history.filter(h => {
+          if (h.id === historyId) {
+             const start = new Date(h.startDate);
+             if (now < start) {
+                return false; // Remove it (it's future)
+             }
+             // If active or past, keep it (immutable) - Consuming UI should handle this but safety here
+             console.warn("Cannot delete active or past delegation. Use stopDelegation instead.");
+             return true; 
+          }
+          return true;
+        });
+
+        return {
+          ...u,
+          delegationHistory: newHistory
+        };
+      };
+
+      setUsers((prevUsers) =>
+        prevUsers.map((u) => (u.id === userId ? updatedUser(u)! : u))
+      );
+      if (currentUser?.id === userId) {
+        setCurrentUser((prev) => updatedUser(prev));
+      }
+  };
+
+  const stopDelegation = (userId: string, historyId: string) => {
+      // Logic: Cut short an active delegation by setting EndDate to NOW.
+      const updatedUser = (u: typeof currentUser) => {
+        if(!u) return u;
+        const now = new Date();
+        const history = u.delegationHistory || [];
+        
+        const newHistory = history.map(h => {
+           if (h.id === historyId) {
+              const start = new Date(h.startDate);
+              const end = new Date(h.endDate);
+              // Only applicable if currently active (or even future/past if we wanted to truncate, but mostly for active)
+             if (now >= start && now <= end) {
+                 return { ...h, endDate: now.toISOString() };
+             }
+           }
+           return h;
+        });
+
+        return { ...u, delegationHistory: newHistory };
+      };
+      
+      setUsers((prevUsers) => prevUsers.map((u) => (u.id === userId ? updatedUser(u)! : u)));
+      if (currentUser?.id === userId) setCurrentUser((prev) => updatedUser(prev));
+  };
+
+
+  const extendDelegation = (userId: string, historyId: string, newEndDate: string) => {
+       const updatedUser = (u: typeof currentUser) => {
+        if(!u) return u;
+        const history = u.delegationHistory || [];
+        
+        const newHistory = history.map(h => {
+           if (h.id === historyId) {
+                 return { ...h, endDate: newEndDate };
+           }
+           return h;
+        });
+
+        return { ...u, delegationHistory: newHistory };
+      };
+      
+      setUsers((prevUsers) => prevUsers.map((u) => (u.id === userId ? updatedUser(u)! : u)));
+      if (currentUser?.id === userId) setCurrentUser((prev) => updatedUser(prev));
+  };
+
+
 
   const updateUserApprovers = (userId: string, approverIds: string[]) => {
     setUsers((prevUsers) =>
@@ -813,8 +912,12 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         editApproval,
         skipLeave,
         updateUnpaidLeaveDays,
-        setDelegate,
+        addDelegation,
+        cancelDelegation,
+        stopDelegation,
+        extendDelegation,
         updateUserApprovers,
+
       }}
     >
       {children}

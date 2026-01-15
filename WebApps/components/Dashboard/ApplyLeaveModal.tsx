@@ -3,7 +3,7 @@
 import { useLMS } from "@/context/LMSContext";
 import { useNotification } from "@/context/NotificationContext";
 import { LeaveNature, LeaveType } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { useMemo, useRef, useState } from "react";
 
 interface ApplyLeaveModalProps {
@@ -17,50 +17,56 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
 
   const [type, setType] = useState<LeaveType>("Regular");
   const [nature, setNature] = useState<LeaveNature | "">("Casual");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  
+  // Consolidated DateTime State for Regular Leave
+  // Default to Today 09:00 AM and Today 05:00 PM
+  const [startDateTime, setStartDateTime] = useState(() => {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    return `${today}T09:00`;
+  });
+  const [endDateTime, setEndDateTime] = useState(() => {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    return `${today}T17:00`;
+  });
+
   const [reason, setReason] = useState("");
 
-  // Time Selection for Regular Leave
-  const [useTime, setUseTime] = useState(false);
-  const [regStartTime, setRegStartTime] = useState("");
-  const [regEndTime, setRegEndTime] = useState("");
+  // Short Leave State (remains Day + Start/End Time for intraday)
+  const [shortDate, setShortDate] = useState("");
+  const [shortStartTime, setShortStartTime] = useState("");
+  const [shortEndTime, setShortEndTime] = useState("");
 
-  // Short Leave State
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  // Helper to init default times if needed
+  // User asked for "Initial 9:00AM / 5:00PM" logic. 
+  // With datetime-local, we usually need a date. 
+  // We can let user pick, or defaulted on mount? Let's keep it empty for explicit user selection to avoid accidental "today" submissions.
 
   // Derived State: Duration
   const duration = useMemo(() => {
-    if (type === "Regular" && startDate && endDate) {
-      if (useTime && regStartTime && regEndTime) {
-        // Precise duration calculation
-        const start = new Date(`${startDate}T${regStartTime}`);
-        const end = new Date(`${endDate}T${regEndTime}`);
-        const diffTime = end.getTime() - start.getTime();
-        
-        // If end is before start, invalid
-        if (diffTime < 0) return 0;
-        
-        // Convert to days (Float)
-        const days = diffTime / (1000 * 60 * 60 * 24);
-        return Number(days.toFixed(2));
-      } else {
-        // Standard Day-based inclusive calculation
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      }
-    } else if (type === "Short" && startTime && endTime) {
-      const [startH, startM] = startTime.split(":").map(Number);
-      const [endH, endM] = endTime.split(":").map(Number);
+    if (type === "Regular" && startDateTime && endDateTime) {
+      const start = new Date(startDateTime);
+      const end = new Date(endDateTime);
+      const diffTime = end.getTime() - start.getTime();
+
+      // If end is before start, invalid
+      if (diffTime < 0) return 0;
+      
+      // Convert to days (Float)
+      const days = diffTime / (1000 * 60 * 60 * 24);
+      return Number(days.toFixed(2));
+
+    } else if (type === "Short" && shortDate && shortStartTime && shortEndTime) {
+      // Short leave duration (Hours)
+      const [startH, startM] = shortStartTime.split(":").map(Number);
+      const [endH, endM] = shortEndTime.split(":").map(Number);
       let diff = endH - startH + (endM - startM) / 60;
       if (diff < 0) diff = 0;
       return diff;
     }
     return 0;
-  }, [type, startDate, endDate, startTime, endTime, useTime, regStartTime, regEndTime]);
+  }, [type, startDateTime, endDateTime, shortDate, shortStartTime, shortEndTime]);
 
   // Derived State: Warning
   const warning = useMemo(() => {
@@ -132,11 +138,10 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
     if (!currentUser) return;
 
     // Basic validation
-    if (!startDate || !reason) return;
-    if (type === "Regular" && !endDate) return;
+    if (!reason) return;
+    if (type === "Regular" && (!startDateTime || !endDateTime)) return;
     if (type === "Regular" && !nature) return;
-    if (type === "Regular" && useTime && (!regStartTime || !regEndTime)) return;
-    if (type === "Short" && (!startTime || !endTime)) return;
+    if (type === "Short" && (!shortDate || !shortStartTime || !shortEndTime)) return;
 
     // Mock File Upload (Convert File objects to Attachments)
     const attachments = selectedFiles.map((file) => ({
@@ -148,14 +153,16 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
     }));
 
     // Prepare Dates
-    // If Regular + Time, combine date + time into ISO-like string
-    // LMSContext needs to handle this format detection or we standardize on ISO
-    let finalStart = startDate;
-    let finalEnd = type === "Short" ? startDate : endDate;
+    let finalStart = "";
+    let finalEnd = "";
 
-    if (type === "Regular" && useTime) {
-      finalStart = `${startDate}T${regStartTime}`;
-      finalEnd = `${endDate}T${regEndTime}`;
+    if (type === "Regular") {
+      finalStart = startDateTime; // Already ISO-like YYYY-MM-DDTHH:mm
+      finalEnd = endDateTime;
+    } else {
+       // Short leave construction
+       finalStart = `${shortDate}T${shortStartTime}`;
+       finalEnd = `${shortDate}T${shortEndTime}`;
     }
 
     // Perform Application
@@ -167,7 +174,7 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
       reason,
       type === "Regular" ? (nature as LeaveNature) : undefined,
       type === "Short",
-      type === "Short" ? { start: startTime, end: endTime } : undefined,
+      type === "Short" ? { start: shortStartTime, end: shortEndTime } : undefined,
       attachments
     );
 
@@ -262,6 +269,56 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
     );
   };
 
+  const DateTimeInput = ({
+    label,
+    value,
+    onChange,
+    min,
+    required,
+  }: {
+    label: string;
+    value: string;
+    onChange: (val: string) => void;
+    min?: string;
+    required?: boolean;
+  }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    return (
+      <div className="relative">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label}
+        </label>
+        <div
+          onClick={() => inputRef.current?.showPicker()}
+          className="relative cursor-pointer"
+        >
+          <input
+            type="text"
+            readOnly
+            value={value ? formatDateTime(value) : ""}
+            placeholder="DD-MM-YYYY HH:mm AM/PM"
+            required={required}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all cursor-pointer bg-white"
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            📅
+          </div>
+          <input
+            ref={inputRef}
+            type="datetime-local"
+            required={required}
+            value={value}
+            min={min}
+            onChange={(e) => onChange(e.target.value)}
+            className="absolute inset-0 opacity-0 cursor-pointer pointer-events-none"
+            tabIndex={-1}
+          />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -306,7 +363,11 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
                     checked={type === "Regular"}
                     onChange={() => {
                       setType("Regular");
-                      setEndDate("");
+                      // Reset inputs on switch to defaults
+                      const now = new Date();
+                      const today = now.toISOString().split('T')[0];
+                      setStartDateTime(`${today}T09:00`);
+                      setEndDateTime(`${today}T17:00`);
                     }}
                     className="text-indigo-600 focus:ring-indigo-500"
                   />
@@ -325,7 +386,9 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
                     checked={type === "Short"}
                     onChange={() => {
                       setType("Short");
-                      setEndDate(startDate);
+                      setShortDate("");
+                      setShortStartTime("");
+                      setShortEndTime("");
                     }}
                     className="text-indigo-600 focus:ring-indigo-500"
                   />
@@ -371,101 +434,64 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
             )}
 
             <div className="space-y-4">
-              {/* Date Inputs */}
-              <div className="grid grid-cols-2 gap-6">
-                <DateInput
-                  label="Start Date"
-                  value={startDate}
-                  onChange={(val) => {
-                    setStartDate(val);
-                    if (type === "Short") setEndDate(val);
-                  }}
-                  required
-                />
-                {type === "Regular" && (
-                  <DateInput
-                    label="End Date"
-                    value={endDate}
-                    onChange={setEndDate}
-                    min={startDate}
-                    required
-                  />
-                )}
-              </div>
-
-              {/* Time Selection Toggle for Regular Leave */}
+              {/* Regular Leave Inputs: DateTime Pickers */}
               {type === "Regular" && (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="useTime"
-                    checked={useTime}
-                    onChange={(e) => setUseTime(e.target.checked)}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                  />
-                  <label htmlFor="useTime" className="text-sm text-gray-700 cursor-pointer">
-                    Add Time (for Partial Days/Half Day)
-                  </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <DateTimeInput
+                          label="Start Date & Time"
+                          required
+                          value={startDateTime}
+                          onChange={setStartDateTime}
+                        />
+                    </div>
+                    <div>
+                        <DateTimeInput
+                          label="End Date & Time"
+                          required
+                          value={endDateTime}
+                          min={startDateTime}
+                          onChange={setEndDateTime}
+                        />
+                    </div>
                 </div>
               )}
 
-              {/* Time Inputs for Regular (Conditional) */}
-              {type === "Regular" && useTime && (
-                <div className="grid grid-cols-2 gap-6 p-4 bg-indigo-50/50 rounded-lg border border-dashed border-indigo-100">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Start Time
-                    </label>
-                    <input
-                      type="time"
-                      required
-                      value={regStartTime}
-                      onChange={(e) => setRegStartTime(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      End Time
-                    </label>
-                    <input
-                      type="time"
-                      required
-                      value={regEndTime}
-                      onChange={(e) => setRegEndTime(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Short Leave Time Inputs */}
+              {/* Short Leave Inputs (Date + Times) */}
               {type === "Short" && (
-                <div className="grid grid-cols-2 gap-6 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Start Time
-                    </label>
-                    <input
-                      type="time"
-                      required
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      End Time
-                    </label>
-                    <input
-                      type="time"
-                      required
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                    />
-                  </div>
+                <div className="space-y-4">
+                     <DateInput
+                        label="Date"
+                        value={shortDate}
+                        onChange={(val) => setShortDate(val)}
+                        required
+                      />
+                    <div className="grid grid-cols-2 gap-6 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Start Time
+                        </label>
+                        <input
+                          type="time"
+                          required
+                          value={shortStartTime}
+                          onChange={(e) => setShortStartTime(e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          End Time
+                        </label>
+                        <input
+                          type="time"
+                          required
+                          value={shortEndTime}
+                          onChange={(e) => setShortEndTime(e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                        />
+                      </div>
+                    </div>
                 </div>
               )}
             </div>
@@ -581,8 +607,8 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
               </div>
             )}
             
-            {/* Show Duration Info if Regular and Use Time */}
-            {type === "Regular" && useTime && duration > 0 && (
+            {/* Show Duration Info for Regular Leave */}
+            {type === "Regular" && duration > 0 && (
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg">
                    <p className="text-sm text-blue-700">Calculated Duration: {duration} days</p>
                 </div>
