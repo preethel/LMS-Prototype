@@ -136,13 +136,8 @@ export default function LeaveRequestDetails({
 
       // Determine display status (Recommend vs Approve)
       let displayStatus = step.status;
-      if (
-        step.status === "Approved" &&
-        actor &&
-        !["HR", "MD"].includes(actor.role)
-      ) {
-        displayStatus = "Recommended";
-      }
+      if (displayStatus === "Recommended") displayStatus = "Approved";
+      if (displayStatus === "Not Recommended") displayStatus = "Rejected";
 
       const event: {
         title: string;
@@ -192,7 +187,7 @@ export default function LeaveRequestDetails({
       const seqApprovers = requester?.sequentialApprovers || [];
       const currentApproverId = request.currentApproverId;
 
-      // Find where we are in sequence
+      // I will read the loop first before replacing.e in sequence
       let currentIndex = -1;
       if (currentApproverId) {
         currentIndex = seqApprovers.indexOf(currentApproverId);
@@ -571,10 +566,10 @@ export default function LeaveRequestDetails({
                              ) : (
                                 <>
                                   <button onClick={handleApprove} className="flex-1 md:flex-none px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 shadow-sm">
-                                     Recommend
+                                     Approve
                                   </button>
                                   <button onClick={handleReject} className="flex-1 md:flex-none px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-bold rounded-lg hover:bg-red-50">
-                                     Not Recommend
+                                     Reject
                                   </button>
                                    <button onClick={handleSkip} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-200 rounded-lg text-sm">
                                       Forward
