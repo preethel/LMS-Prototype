@@ -74,29 +74,11 @@ export default function ApplicationsList({
     }
   };
 
-  if (paginatedData.length === 0) {
-    if (limit) return null; // Hide if widget is empty
-  }
+  // Removed the 'return null' block to ensure empty state is displayed as requested.
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      {/* HEADER (Only for Dashboard Widget usage usually, 
-          but technically Dashboard has its own header logic in the parent container 
-          for 'View All' link placement. 
-          However, usually unified components handle their own header if `showViewAll` is passed?
-          Checking ApprovalsList: it handles header if showHighlight=true.
-          Here we don't have highlight.
-          Let's reproduce Dashboard header ONLY if showViewAll is true AND it's not the full page.
-          Actually, Dashboard passes `showViewAll`.
-          Let's look at Dashboard: 
-          <div className="px-6 py-4 border-b ... flex justify-between ...">
-             <h3>My Applications</h3> <Link>View All</Link> 
-          </div>
-          I should verify if I want to include this header INSIDE the component.
-          ApprovalsList included the header if `showHighlight` was true.
-          Here, consistency suggests yes.
-      */}
-
+      {/* HEADER */}
       {(showViewAll || limit) && (
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
           <h3 className="font-semibold text-gray-900">My Applications</h3>

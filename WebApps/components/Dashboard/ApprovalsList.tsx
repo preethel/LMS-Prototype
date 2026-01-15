@@ -126,9 +126,7 @@ export default function ApprovalsList({
     displayData = filteredData.slice(startIndex, startIndex + itemsPerPage);
   }
 
-  if (displayData.length === 0 && limit) {
-     return null;
-  }
+  // Removed early return to show empty state
 
   return (
     <div className="mb-0">
@@ -142,10 +140,13 @@ export default function ApprovalsList({
                 <h3 className="text-lg font-bold text-gray-900">
                   Pending Approvals
                 </h3>
-                <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full">
-                  Action Required
-                </span>
+                {displayData.length > 0 && (
+                    <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full">
+                      Action Required
+                    </span>
+                )}
               </div>
+              {/* Only show View All if we have data or always? Probably always for history access? */}
               {showViewAll && (
                 <Link
                   href="/leave/approvals"
@@ -249,10 +250,10 @@ export default function ApprovalsList({
               {displayData.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9} // Adjusted colspan to match header columns (Applicant, Last Approver, Type, Status, Duration, From, To, Actions, Calendar = 9)
                     className="px-6 py-8 text-center text-gray-400"
                   >
-                    No requests found matching your filters.
+                    {limit ? "No pending approvals." : "No requests found matching your filters."}
                   </td>
                 </tr>
               ) : (

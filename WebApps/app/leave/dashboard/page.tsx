@@ -73,10 +73,11 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* APPROVALS SECTION (Only if there are pending requests) */}
-      {pendingApprovals.length > 0 && (
+      {/* APPROVALS SECTION */}
+      
+      <div className="mb-8">
         <ApprovalsList limit={5} showHighlight={true} showViewAll={true} />
-      )}
+      </div>
 
       {/* MY APPLICATIONS */}
       <ApplicationsList limit={5} showViewAll={true} />
