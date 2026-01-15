@@ -312,8 +312,47 @@ export default function LeaveRequestDetails({
         </h3>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <div className="relative flex justify-between">
-            {/* Horizontal Line Background */}
-            <div className="absolute top-3 left-0 w-full h-0.5 bg-gray-100 -z-0"></div>
+            {timelineEvents.length > 1 && (() => {
+                const N = timelineEvents.length;
+                const leftOffset = 100 / (2 * N);
+                const totalWidth = 100 * (N - 1) / N;
+
+                // Find index of the latest "completed" step.
+                let progressIndex = -1;
+                for (let i = timelineEvents.length - 1; i >= 0; i--) {
+                   const s = timelineEvents[i].status;
+                   if (s !== 'Pending' && s !== 'Upcoming') {
+                       progressIndex = i;
+                       break;
+                   }
+                }
+                
+                // If progressIndex is 0 (Applied), width is 0. 
+                // If progressIndex is 1, width covers 1 segment.
+                const greenWidth = (100 * progressIndex) / N;
+                
+                return (
+                    <>
+                        {/* Horizontal Line Background (Center to Center) */}
+                        <div 
+                            className="absolute top-3.5 h-0.5 bg-gray-100 -z-0"
+                            style={{ 
+                                left: `${leftOffset}%`,
+                                width: `${totalWidth}%`
+                            }}
+                        ></div>
+
+                        {/* Progress Line (Center to Center) */}
+                        <div 
+                            className="absolute top-3.5 h-0.5 bg-green-500 transition-all duration-500 -z-0" 
+                            style={{ 
+                                left: `${leftOffset}%`,
+                                width: `${greenWidth}%`
+                            }}
+                        ></div>
+                    </>
+                );
+            })()}
 
             {timelineEvents.map((event, idx) => {
               // Calculate width for the progress bar (if we wanted a colored progress bar)
