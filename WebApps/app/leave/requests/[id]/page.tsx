@@ -4,7 +4,7 @@ import AttachmentsModal from "@/components/Dashboard/AttachmentsModal";
 import EmployeeHistoryModal from "@/components/Dashboard/EmployeeHistoryModal";
 import { useLMS } from "@/context/LMSContext";
 import { useNotification } from "@/context/NotificationContext";
-import { formatDate, formatDuration } from "@/lib/utils";
+import { formatDate, formatDateTime, formatDuration } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { use, useState } from "react";
 
