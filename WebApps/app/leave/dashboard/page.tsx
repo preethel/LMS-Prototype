@@ -74,10 +74,12 @@ export default function Dashboard() {
       </div>
 
       {/* APPROVALS SECTION */}
-      
-      <div className="mb-8">
-        <ApprovalsList limit={5} showHighlight={true} showViewAll={true} />
-      </div>
+
+      {(currentUser.role !== "Employee" || pendingApprovals.length > 0) && (
+        <div className="mb-8">
+          <ApprovalsList limit={5} showHighlight={true} showViewAll={true} />
+        </div>
+      )}
 
       {/* MY APPLICATIONS */}
       <ApplicationsList limit={5} showViewAll={true} />
