@@ -363,30 +363,68 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-          <h2 className="text-xl font-bold text-gray-900">
-            New Leave Application
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-            type="button"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/30">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-gray-900">
+                  New Leave Application
+                </h2>
+                {/* Duration Badge */}
+                {type === "Regular" && duration > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-xs font-bold text-indigo-700">
+                    ⏱️{" "}
+                    {(() => {
+                      const totalHours = duration * 8;
+                      const d = Math.floor(totalHours / 8);
+                      const h = Math.round(totalHours % 8);
+                      let text = "";
+                      if (d > 0) text += `${d} Day${d > 1 ? "s" : ""}`;
+                      if (h > 0)
+                        text += `${d > 0 ? " " : ""}${h} Hr${h > 1 ? "s" : ""}`;
+                      return text || "0 Days";
+                    })()}
+                  </span>
+                )}
+              </div>
+              
+              {/* Optional Subtext or just spacing */}
+              {!warning && (
+                 <p className="text-sm text-gray-500 mt-1">Fill in the details below to submit your request.</p>
+              )}
+            </div>
+
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              type="button"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Compact Warning Banner */}
+          {warning && (
+            <div className="mt-3 flex items-center gap-2 text-xs font-medium text-amber-700 bg-amber-50 px-3 py-2 rounded-lg border border-amber-100">
+              <svg className="h-4 w-4 text-amber-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span>{warning}</span>
+            </div>
+          )}
         </div>
 
         <div className="p-5">
@@ -622,37 +660,9 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
              </div>
 
             {/* Warning Message */}
-            {warning && (
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-yellow-700">{warning}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Show Duration Info for Regular Leave (Compact) */}
-            {type === "Regular" && duration > 0 && (
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg flex items-center justify-between">
-                   <p className="text-sm text-blue-700 font-medium">Calculated Duration: <span className="font-bold">{(() => {
-                        const totalHours = duration * 8;
-                        const d = Math.floor(totalHours / 8);
-                        const h = Math.round(totalHours % 8);
-                        let text = "";
-                        if (d > 0) text += `${d} Day${d > 1 ? 's' : ''}`;
-                        if (h > 0) text += `${d > 0 ? ' ' : ''}${h} Hour${h > 1 ? 's' : ''}`;
-                        return text || "0 Days";
-                   })()}</span></p>
-                </div>
-            )}
 
-            <div className="flex justify-end space-x-3 pt-3 border-t border-gray-100">
+
+            <div className="flex justify-end space-x-3">
               <button
                 type="button"
                 onClick={onClose}
