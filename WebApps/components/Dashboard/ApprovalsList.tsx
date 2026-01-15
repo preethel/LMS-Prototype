@@ -1,3 +1,5 @@
+"use client";
+
 import { useLMS } from "@/context/LMSContext";
 import { LeaveRequest } from "@/lib/types";
 import { formatDate, formatDuration } from "@/lib/utils";
@@ -255,27 +257,20 @@ export default function ApprovalsList({
                 </tr>
               ) : (
                 displayData.map((request) => {
-                  const isPendingForMe = request.status === "Pending" && (
-                      request.currentApproverId === currentUser.id || 
-                      // Simple check for delegation: if I am a delegate for the current approver
-                      (request.currentApproverId && users.find(u => u.id === currentUser.id)?.delegatedFrom?.includes(request.currentApproverId))
-                  );
-                  // Wait, `delegatedFrom` property on user isn't standard in my mock.
-                  // Let's stick to strict ID check for now, or just show for all Pending if simpler/safer until verified.
-                  // Actually, the previous Logic `getPendingApprovals` handled it.
-                  // If it's in the `pendingRequests` array, it is actionable.
-                  // If it's in `historyRequests` array, it's not.
-                  // I can check `pendingRequests.some(p => p.id === request.id)`.
+                  // Check if this request is actionable by the current user (exists in pendingRequests)
                   const canAct = pendingRequests.some(p => p.id === request.id);
+                  const applicant = users.find(u => u.id === request.userId);
 
                   return (
                   <tr
                     key={request.id}
                     className="hover:bg-gray-50/50 transition-colors"
                   >
-                    <td className="px-6 py-4 font-semibold text-gray-900">
+                    <td className="px-6 py-4">
                       <div>
-                        {getUserName(request.userId)}
+                        <div className="font-semibold text-gray-900">{applicant?.name || "Unknown User"}</div>
+                        <div className="text-xs text-gray-500">{applicant?.designation || "N/A"}</div>
+                        
                         {request.currentApproverId &&
                           request.currentApproverId !== currentUser.id && canAct && (
                             <span className="block text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full w-fit mt-1">

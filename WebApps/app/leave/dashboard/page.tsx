@@ -1,24 +1,19 @@
 "use client";
 
 import ApplicationsList from "@/components/Dashboard/ApplicationsList";
-import ApplyLeaveModal from "@/components/Dashboard/ApplyLeaveModal";
+// Removed ApplyLeaveModal import
 import ApprovalsList from "@/components/Dashboard/ApprovalsList";
 import StatCard from "@/components/Dashboard/StatCard";
 import { useLMS } from "@/context/LMSContext";
 import { formatDuration } from "@/lib/utils";
-import { useState } from "react";
+// Removed useState
 
 export default function Dashboard() {
   const {
     currentUser,
     balances,
-    leaves,
-    cancelLeave,
     getPendingApprovals,
-    users,
   } = useLMS();
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!currentUser) return null;
 
@@ -29,17 +24,8 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="mb-8 flex justify-between items-end">
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-        >
-          + New Leave Application
-        </button>
-      </div>
-
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-4">
         <StatCard
           title="Total Quota"
           value={myBalance ? `${myBalance.totalDays} Days` : "0"}
@@ -92,15 +78,8 @@ export default function Dashboard() {
         <ApprovalsList limit={5} showHighlight={true} showViewAll={true} />
       )}
 
-      {/* APPROVAL HISTORY - Moved to dedicated page */}
-
       {/* MY APPLICATIONS */}
       <ApplicationsList limit={5} showViewAll={true} />
-
-      <ApplyLeaveModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </div>
   );
 }

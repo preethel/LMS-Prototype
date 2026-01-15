@@ -2,10 +2,13 @@
 
 import { useLMS } from "@/context/LMSContext";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import ApplyLeaveModal from "../Dashboard/ApplyLeaveModal";
 import NotificationPopover from "../Notification/NotificationPopover";
 
 export default function Header() {
   const { currentUser, leaves } = useLMS();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -99,8 +102,19 @@ export default function Header() {
     <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between sticky top-0 z-40">
       {renderHeaderContent()}
       <div className="flex items-center space-x-4">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm text-sm font-bold"
+        >
+          + New Leave Application
+        </button>
         <NotificationPopover />
       </div>
+
+      <ApplyLeaveModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </header>
   );
 }
