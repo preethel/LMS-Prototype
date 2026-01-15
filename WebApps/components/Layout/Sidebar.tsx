@@ -96,40 +96,6 @@ export default function Sidebar() {
                 Approver Config
               </Link>
             )}
-          </div>
-        </div>
-
-        <div>
-          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Employee Assignment
-          </h3>
-          <div className="space-y-1">
-            <Link
-              href=""
-              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                pathname === "" ? activeClass : inactiveClass
-              }`}
-            >
-              Assign
-            </Link>
-            <Link
-              href=""
-              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                pathname === "" ? activeClass : inactiveClass
-              }`}
-            >
-              Open
-            </Link>
-          </div>
-        </div>
-
-        {/* SYSTEM GROUP - HR Only */}
-
-        <div>
-          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            System
-          </h3>
-          <div className="space-y-1">
             {currentUser.role === "HR" && (
               <Link
                 href="/leave/reports"
@@ -150,6 +116,22 @@ export default function Sidebar() {
             </Link>
           </div>
         </div>
+
+        {/* EMPLOYEE ASSIGNMENT GROUP */}
+        <div>
+          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            Employee Assignment
+          </h3>
+          <div className="space-y-1">
+            <div className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-600 cursor-not-allowed">
+              Project Allocation
+            </div>
+            <div className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-600 cursor-not-allowed">
+              Resource Planning
+            </div>
+          </div>
+        </div>
+
       </nav>
 
       <div className="p-4 border-t border-gray-800">
