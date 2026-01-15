@@ -42,7 +42,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleEditClick = (history: any) => {
+  const handleEditClick = (history: DelegationHistory) => {
       setEditingId(history.id);
       setSelectedDelegate(history.delegatedToId);
       setStartDate(history.startDate);
@@ -99,21 +99,24 @@ export default function SettingsPage() {
                 </div>
                 <div className="p-5">
                     {currentDelegateUser && activeDelegations[0] ? (
-                        <div className="bg-amber-50 border border-amber-100 rounded-lg p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-xl">⚠️</span>
-                                <h4 className="font-bold text-amber-800 text-sm">Delegation Active</h4>
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                            <div className="mb-2">
+                                <div className="flex items-center gap-2 text-amber-800 mb-1">
+                                    <span className="relative flex h-2 w-2">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                    </span>
+                                    <h4 className="font-bold text-xs uppercase tracking-wider">Delegation Active</h4>
+                                </div>
+                                <p className="text-sm text-amber-900">
+                                    Approvals are being routed to <strong className="font-bold">{currentDelegateUser.name}</strong>
+                                </p>
                             </div>
-                            <p className="text-xs text-amber-700 leading-relaxed mb-3">
-                                You have delegated approval authority to:
-                                <br/>
-                                <strong className="text-amber-900 block mt-1">{currentDelegateUser.name}</strong>
-                                <span className="opacity-75">{currentDelegateUser.designation}</span>
-                            </p>
                             <button
                                 onClick={() => stopDelegation(currentUser.id, activeDelegations[0].id)}
-                                className="w-full py-2 bg-white border border-amber-300 text-amber-700 text-xs font-bold rounded hover:bg-amber-100 transition-colors"
+                                className="w-full py-1.5 bg-white border border-amber-300 text-amber-700 text-xs font-bold rounded hover:bg-amber-100 transition-colors flex items-center justify-center gap-1.5"
                             >
+                                <Ban className="w-3 h-3" />
                                 Stop Delegation
                             </button>
                         </div>
@@ -350,7 +353,7 @@ export default function SettingsPage() {
                                 🕒
                             </div>
                             <h3 className="text-gray-500 font-medium">No History</h3>
-                            <p className="text-gray-400 text-sm mt-1">You haven't delegated any approvals yet.</p>
+                            <p className="text-gray-400 text-sm mt-1">You haven&apos;t delegated any approvals yet.</p>
                         </div>
                      )}
                 </div>

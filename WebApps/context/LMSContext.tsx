@@ -630,6 +630,30 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
       if (currentUser?.id === userId) setCurrentUser((prev) => updatedUser(prev));
   };
 
+  const updateDelegation = (userId: string, historyId: string, delegateId: string, startDate: string, endDate: string) => {
+       const updatedUser = (u: typeof currentUser) => {
+        if(!u) return u;
+        const history = u.delegationHistory || [];
+        
+        const newHistory = history.map(h => {
+           if (h.id === historyId) {
+                return { 
+                  ...h, 
+                  delegatedToId: delegateId,
+                  startDate,
+                  endDate
+                };
+           }
+           return h;
+        });
+
+        return { ...u, delegationHistory: newHistory };
+      };
+      
+      setUsers((prevUsers) => prevUsers.map((u) => (u.id === userId ? updatedUser(u)! : u)));
+      if (currentUser?.id === userId) setCurrentUser((prev) => updatedUser(prev));
+  };
+
 
 
   const updateUserApprovers = (userId: string, approverIds: string[]) => {
@@ -923,6 +947,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         cancelDelegation,
         stopDelegation,
         extendDelegation,
+        updateDelegation,
         updateUserApprovers,
 
       }}
