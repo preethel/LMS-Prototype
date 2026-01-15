@@ -610,7 +610,16 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
             {/* Show Duration Info for Regular Leave */}
             {type === "Regular" && duration > 0 && (
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg">
-                   <p className="text-sm text-blue-700">Calculated Duration: {duration} days</p>
+                   <p className="text-sm text-blue-700">Calculated Duration: {(() => {
+                       const totalHours = duration * 8;
+                       const d = Math.floor(totalHours / 8);
+                       const h = Math.round(totalHours % 8);
+                       
+                       let text = "";
+                       if (d > 0) text += `${d} Day${d > 1 ? 's' : ''}`;
+                       if (h > 0) text += `${d > 0 ? ' ' : ''}${h} Hour${h > 1 ? 's' : ''}`;
+                       return text || "0 Days"; // Fallback
+                   })()}</p>
                 </div>
             )}
 
