@@ -48,13 +48,53 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
     if (type === "Regular" && startDateTime && endDateTime) {
       const start = new Date(startDateTime);
       const end = new Date(endDateTime);
-      const diffTime = end.getTime() - start.getTime();
-
-      // If end is before start, invalid
-      if (diffTime < 0) return 0;
       
-      // Convert to days (Float)
-      const days = diffTime / (1000 * 60 * 60 * 24);
+      if (end <= start) return 0;
+
+      // Workday Defines
+      const WORK_START_HOUR = 9;
+      const WORK_END_HOUR = 17;
+      const MINS_PER_DAY = (WORK_END_HOUR - WORK_START_HOUR) * 60; // 480 mins
+
+      // Helper: Get minutes from midnight
+      const getMins = (d: Date) => d.getHours() * 60 + d.getMinutes();
+      
+      const startDay = new Date(start).setHours(0,0,0,0);
+      const endDay = new Date(end).setHours(0,0,0,0);
+      
+      let totalMins = 0;
+
+      if (startDay === endDay) {
+         // Same Day
+         // Clamp start/end to work hours
+         const sMins = Math.max(getMins(start), WORK_START_HOUR * 60);
+         const eMins = Math.min(getMins(end), WORK_END_HOUR * 60);
+         
+         const diff = eMins - sMins;
+         totalMins = diff > 0 ? diff : 0;
+      } else {
+         // Different Days
+         
+         // 1. Start Day contribution (Start Time -> 17:00)
+         const sMins = Math.max(getMins(start), WORK_START_HOUR * 60);
+         const sContribution = Math.max(0, (WORK_END_HOUR * 60) - sMins);
+         
+         // 2. End Day contribution (09:00 -> End Time)
+         const eMins = Math.min(getMins(end), WORK_END_HOUR * 60);
+         const eContribution = Math.max(0, eMins - (WORK_START_HOUR * 60));
+         
+         // 3. Full Days Between
+         const oneDay = 24 * 60 * 60 * 1000;
+         const diffDays = Math.round((endDay - startDay) / oneDay);
+         const fullDays = diffDays - 1; 
+         
+         totalMins = sContribution + eContribution + (fullDays * MINS_PER_DAY);
+      }
+
+      // Final Duration in Days
+      const days = totalMins / MINS_PER_DAY;
+      
+      // Round to 2 decimals, but if it's practically integer (e.g. 1.00), allow it.
       return Number(days.toFixed(2));
 
     } else if (type === "Short" && shortDate && shortStartTime && shortEndTime) {
@@ -520,7 +560,7 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
                       />
                 </div>
                 
-                {/* File Upload - Compact */}
+                {/* File Upload - Compact Grid */}
                 <div>
                      <div className="flex justify-between items-center mb-1.5">
                         <label className="block text-sm font-medium text-gray-700">
@@ -531,37 +571,50 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
                         </span>
                      </div>
                      
-                     <div className="border border-dashed border-gray-300 rounded-lg p-3 bg-gray-50 flex flex-col justify-center min-h-[100px] relative">
-                        {selectedFiles.length > 0 ? (
-                            <div className="space-y-2 max-h-[80px] overflow-y-auto pr-1">
-                                {selectedFiles.map((file, idx) => (
-                                    <div key={idx} className="flex justify-between items-center bg-white p-1.5 px-3 rounded border border-gray-200 text-xs">
-                                        <span className="truncate max-w-[150px]">{file.name}</span>
-                                        <button type="button" onClick={() => removeFile(idx)} className="text-red-500 hover:text-red-700">
-                                            ✕
-                                        </button>
-                                    </div>
-                                ))}
+                     <div className="border border-dashed border-gray-300 rounded-lg p-3 bg-gray-50 min-h-[100px] relative">
+                         <div className="flex flex-wrap gap-3 relative z-10">
+                            {/* Existing Files */}
+                            {selectedFiles.map((file, idx) => (
+                              <div
+                                key={idx}
+                                className="relative w-16 h-16 bg-white border border-gray-200 rounded-lg flex flex-col items-center justify-center group overflow-hidden shadow-sm"
+                                title={file.name}
+                              >
+                                <span className="text-2xl">📄</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); removeFile(idx)}}
+                                  className="absolute top-0.5 right-0.5 bg-red-100 text-red-500 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  ✕
+                                </button>
+                                <span className="text-[9px] text-gray-500 w-full px-1 text-center truncate absolute bottom-1">
+                                  {(file.size / 1024).toFixed(0)}KB
+                                </span>
+                              </div>
+                            ))}
+
+                            {/* Add Button Logic within Grid */}
+                            {selectedFiles.length < 5 && (
+                              <div className="relative w-16 h-16 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer text-gray-400 hover:text-indigo-500">
+                                   <span className="text-xl">+</span>
+                                    <input
+                                      type="file"
+                                      multiple
+                                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                      onChange={handleFileChange}
+                                      accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                                    />
+                              </div>
+                            )}
+                         </div>
+
+                         {/* Fallback Text if Empty */}
+                         {selectedFiles.length === 0 && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"> 
+                                <p className="text-xs text-gray-400">Drag & drop or Click +</p>
                             </div>
-                        ) : (
-                          <div className="text-center">
-                              <p className="text-xs text-gray-400">Drag & drop or Click to Upload</p>
-                          </div>
-                        )}
-                        
-                        {/* Always show input trigger area if not full, or make it a small button? 
-                            Let's keep the invisible input overlaying the whole box for simplicity if empty, 
-                            or a dedicated 'add' button if occupied.
-                            Actually, simpler: Just an input covering the box if empty. 
-                            If not empty, show 'Add more' button?
-                        */}
-                         <input
-                              type="file"
-                              multiple
-                              className={`w-full ${selectedFiles.length > 0 ? 'text-xs mt-2' : 'h-full absolute inset-0 opacity-0 cursor-pointer'}`}
-                              onChange={handleFileChange}
-                              accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-                            />
+                         )}
                      </div>
                      {fileError && <p className="text-red-500 text-xs mt-1">{fileError}</p>}
                 </div>

@@ -374,337 +374,187 @@ export default function LeaveRequestDetails({
       <div className="space-y-8">
         {/* Main Details Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
+          {/* Header: Requester Info & Balance */}
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/30 flex items-center justify-between">
+             <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
                   {requester?.name.charAt(0)}
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900 text-lg">
-                    {requester?.name}
-                  </p>
-                  <p className="text-gray-500 text-sm">
-                    {requester?.designation}
-                  </p>
+                  <p className="font-bold text-gray-900 text-sm">{requester?.name}</p>
+                  <p className="text-gray-500 text-xs">{requester?.designation}</p>
                 </div>
-              </div>
-
-              <div className="hidden md:block w-px h-10 bg-gray-200 mx-2"></div>
-
-              <div className="hidden md:block">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                  {currentUser.id === request.userId
-                    ? "Projected Balance"
-                    : "Current Balance"}
-                </p>
-                <div className="text-sm font-bold text-indigo-600 flex items-baseline gap-1">
-                  {(() => {
-                    // Normalize everything to Hours (1 Day = 8 Hours)
-                    const totalQuotaHours =
-                      (requesterBalance?.totalDays || 0) * 8;
-
-                    const usedHours =
-                      (requesterBalance?.usedDays || 0) * 8 +
-                      (requesterBalance?.usedHours || 0);
-
-                    let remainingHours = totalQuotaHours - usedHours;
-
-                    // If Applicant View, deduct THIS request's value visually
-                    if (
-                      currentUser.id === request.userId &&
-                      request.status === "Pending"
-                    ) {
-                      const deduction =
-                        request.type === "Short"
-                          ? request.daysCalculated // Short leave stored as hours
-                          : request.daysCalculated * 8; // Regular leave stored as days
-                      remainingHours -= deduction;
-                    }
-
-                    const displayDays = Math.floor(remainingHours / 8);
-                    const displayHours = remainingHours % 8;
-
-                    return (
-                      <>
-                        {formatDuration(displayDays)}
-                        <span className="text-xs font-normal text-gray-500">
-                          Days
-                        </span>
-                        {displayHours > 0 && (
-                          <>
-                            {" "}
-                            {formatDuration(displayHours)}
-                            <span className="text-xs font-normal text-gray-500">
-                              Hours
-                            </span>
-                          </>
-                        )}
-                      </>
-                    );
-                  })()}
-                  <span className="text-gray-400 font-normal ml-1 text-xs">
-                    Remaining
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Mobile-only balance view could go here if needed, but for now we rely on the responsive stack */}
-              <button
-                onClick={() => setIsHistoryOpen(true)}
-                className="px-4 py-2 bg-white text-indigo-600 border border-indigo-200 text-sm font-bold rounded-lg hover:bg-indigo-50 transition-colors shadow-sm"
+             </div>
+             <button
+                 onClick={() => setIsHistoryOpen(true)}
+                 className="text-indigo-600 text-xs font-bold hover:underline"
               >
-                View History
+                 View History
               </button>
-            </div>
           </div>
 
-          <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
-                Start Date
-              </label>
-              <p className="text-lg font-medium text-gray-900">
-                {formatDateTime(request.startDate)}
-              </p>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
-                End Date
-              </label>
-              <p className="text-lg font-medium text-gray-900">
-                {formatDateTime(request.endDate)}
-              </p>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
-                Duration
-              </label>
-              <p className="text-lg font-medium text-indigo-600">
-                {formatDuration(request.daysCalculated)}{" "}
-                {request.type === "Short" ? "Hours" : "Days"}
-              </p>
-            </div>
-
-            <div className="col-span-1 md:col-span-3">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">
-                Reason
-              </label>
-              <div className="bg-gray-50 p-3 rounded-xl text-gray-600 leading-relaxed">
-                {request.reason}
-              </div>
-            </div>
-
-            {/* Attachments Section */}
-            {request.attachments && request.attachments.length > 0 && (
-              <div className="col-span-1 md:col-span-3">
-                <div className="flex items-center justify-between bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
-                      📎
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-indigo-900 text-sm">
-                        Attachments
-                      </h4>
-                      <p className="text-xs text-indigo-600">
-                        {request.attachments.length} files attached
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setIsAttachmentsOpen(true)}
-                    className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-                  >
-                    View & Download
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Unpaid Field / Administrative - ONLY VISIBLE TO HR/MD */}
-            {isFinalAuthority && (
-              <div className="col-span-1 md:col-span-3 pt-4 border-t border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-bold text-gray-700 block">
-                      Unpaid / LWP Days
-                    </label>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Mark days as Loss of Pay if applicable
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      max={request.daysCalculated}
-                      value={formatDuration(request.unpaidLeaveDays || 0)}
-                      onChange={(e) =>
-                        updateUnpaidLeaveDays(
-                          request.id,
-                          Number(e.target.value)
-                        )
-                      }
-                      className="w-24 text-center px-3 py-2 border border-gray-200 rounded-lg text-lg font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all hover:border-gray-300"
-                    />
-                    <span className="text-gray-400 font-medium">
-                      / {formatDuration(request.daysCalculated)}
+          {/* Body: Compact Details Grid */}
+          <div className="p-6">
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Leave Type</span>
+                    <span className="inline-block px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-bold border border-indigo-100">
+                        {request.nature} ({request.type})
                     </span>
-                  </div>
                 </div>
-              </div>
-            )}
+                <div>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Duration</span>
+                    <span className="text-sm font-bold text-gray-900">
+                         {formatDuration(request.daysCalculated)} {request.type === "Short" ? "Hours" : "Days"}
+                    </span>
+                </div>
+                <div>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Start Date</span>
+                    <span className="text-sm font-medium text-gray-700 block">
+                        {formatDateTime(request.startDate)}
+                    </span>
+                </div>
+                <div>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">End Date</span>
+                    <span className="text-sm font-medium text-gray-700 block">
+                        {formatDateTime(request.endDate)}
+                    </span>
+                </div>
+             </div>
+             
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Reason</span>
+                     <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-600 leading-relaxed border border-gray-100">
+                        {request.reason}
+                     </div>
+                </div>
+                <div>
+                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Attachments</span>
+                     {request.attachments && request.attachments.length > 0 ? (
+                        <div className="bg-white border border-gray-200 rounded-lg p-3">
+                           <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium text-gray-500">{request.attachments.length} Files</span>
+                              <button onClick={() => setIsAttachmentsOpen(true)} className="text-xs text-indigo-600 font-bold hover:underline">View</button>
+                           </div>
+                           <div className="flex -space-x-2">
+                              {[...Array(Math.min(3, request.attachments.length))].map((_, i) => (
+                                  <div key={i} className="w-6 h-6 rounded-full bg-gray-100 border border-white flex items-center justify-center text-[8px]">📎</div>
+                              ))}
+                           </div>
+                        </div>
+                     ) : (
+                        <span className="text-xs text-gray-400 italic">No attachments provided</span>
+                     )}
+                </div>
+             </div>
           </div>
-
+          
+          {/* Action Section - Separated */}
           {(!isReadOnly || hasProcessed) && (
-            <div className="p-5 bg-gray-50 border-t border-gray-100">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                {hasProcessed && isReadOnly
-                  ? "My Remarks"
-                  : "Remarks (Optional)"}
-              </label>
-              <textarea
-                value={
-                  hasProcessed && isReadOnly
-                    ? hasProcessed.remarks || ""
-                    : remarks
-                }
-                onChange={(e) => setRemarks(e.target.value)}
-                placeholder="Add a note..."
-                disabled={!!(hasProcessed && isReadOnly)}
-                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none mb-4 transition-all disabled:bg-gray-100 disabled:text-gray-500"
-                rows={2}
-              />
-              {!isReadOnly && (
-                <div className="flex gap-4">
-                  {hasProcessed ? (
-                    <>
-                      <button
-                        onClick={handleApprove}
-                        disabled={hasProcessed.status === "Approved"}
-                        className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
-                          hasProcessed.status === "Approved"
-                            ? "bg-green-50 text-green-300 cursor-not-allowed border border-green-100"
-                            : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 shadow-green-200"
-                        }`}
-                      >
-                        {hasProcessed.status === "Approved" ||
-                        hasProcessed.status === "Recommended"
-                          ? isFinalAuthority
-                            ? "Approved"
-                            : "Recommended"
-                          : isFinalAuthority
-                          ? "Change to Approve"
-                          : "Change to Recommend"}
-                      </button>
-                      <button
-                        onClick={handleReject}
-                        disabled={
-                          hasProcessed.status === "Rejected" ||
-                          hasProcessed.status === "Not Recommended"
-                        }
-                        className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
-                          hasProcessed.status === "Rejected" ||
-                          hasProcessed.status === "Not Recommended"
-                            ? "bg-red-50 text-red-300 cursor-not-allowed border border-red-100"
-                            : "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:shadow-lg hover:-translate-y-0.5"
-                        }`}
-                      >
-                        {hasProcessed.status === "Rejected" ||
-                        hasProcessed.status === "Not Recommended"
-                          ? isFinalAuthority
-                            ? "Rejected"
-                            : "Not Recommended"
-                          : isFinalAuthority
-                          ? "Change to Reject"
-                          : "Change to Not Recommend"}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {isFinalAuthority && !hasProcessed ? (
-                        <>
-                          {/* HR/Admin Special Actions */}
-                          <button
-                            onClick={() => {
-                              if (hasProcessed) {
-                                editApproval(
-                                  request.id,
-                                  currentUser.id,
-                                  "Approved",
-                                  remarks
-                                );
-                              } else {
-                                approveLeave(
-                                  request.userId,
-                                  request.id,
-                                  currentUser.id,
-                                  remarks,
-                                  true // isFinalDecision = true
-                                );
-                              }
-                              router.push("/leave/dashboard");
-                            }}
-                            className="flex-1 bg-gradient-to-r from-green-600 to-green-500 text-white py-2.5 rounded-xl font-bold hover:from-green-700 hover:to-green-600 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
-                          >
-                            Approve & Finalize
-                          </button>
-                          {/* Forward to Director Button - Only for HR */}
-                          {currentUser.role === "HR" && (
-                            <button
-                              onClick={() => {
-                                // Forward to Director
-                                approveLeave(
-                                  request.userId,
-                                  request.id,
-                                  currentUser.id,
-                                  remarks,
-                                  false // isFinalDecision = false
-                                );
-                                router.push("/dashboard");
-                              }}
-                              className="flex-1 bg-white text-indigo-600 border border-indigo-200 py-2.5 rounded-xl font-bold hover:bg-indigo-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
-                            >
-                              Forward to Director
-                            </button>
-                          )}
-                          <button
-                            onClick={handleReject}
-                            className="px-6 py-2.5 bg-white text-red-600 border border-red-200 rounded-xl font-bold hover:bg-red-50 transition-all"
-                          >
-                            Reject
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={handleApprove}
-                            className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 transform hover:-translate-y-0.5"
-                          >
-                            {isFinalAuthority ? "Approve" : "Recommend"}
-                          </button>
-                          <button
-                            onClick={handleReject}
-                            className="flex-1 bg-white text-red-600 border border-red-200 py-2.5 rounded-xl font-bold hover:bg-red-50 transition-all hover:shadow-lg transform hover:-translate-y-0.5"
-                          >
-                            {isFinalAuthority ? "Reject" : "Not Recommend"}
-                          </button>
-                          <button
-                            onClick={handleSkip}
-                            className="px-6 py-2.5 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-all"
-                          >
-                            Forward
-                          </button>
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+              <div className="bg-gray-50 border-t border-gray-100 p-5">
+                 
+                 {/* Unpaid Days - Admin Only */}
+                 {isFinalAuthority && (
+                   <div className="mb-4 flex items-center gap-3">
+                      <label className="text-xs font-bold text-gray-500 uppercase">Unpaid / LWP:</label>
+                      <div className="flex items-center gap-1">
+                        <input
+                           type="number"
+                           min="0"
+                           max={request.daysCalculated}
+                           value={formatDuration(request.unpaidLeaveDays || 0)}
+                           onChange={(e) => updateUnpaidLeaveDays(request.id, Number(e.target.value))}
+                           className="w-16 text-center px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none"
+                        />
+                        <span className="text-xs text-gray-400">/ {formatDuration(request.daysCalculated)} Days</span>
+                      </div>
+                   </div>
+                 )}
+
+                 <div className="flex flex-col md:flex-row gap-4 items-start">
+                    <div className="flex-grow w-full md:w-auto">
+                        <textarea
+                            value={hasProcessed && isReadOnly ? hasProcessed.remarks || "" : remarks}
+                            onChange={(e) => setRemarks(e.target.value)}
+                            placeholder="Add your remarks here..."
+                            disabled={!!(hasProcessed && isReadOnly)}
+                            className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow mb-0"
+                            rows={1}
+                        />
+                    </div>
+                    <div className="w-full md:w-auto flex flex-row gap-2 shrink-0">
+                        {hasProcessed ? (
+                            <>
+                                <button
+                                    onClick={handleApprove}
+                                    disabled={hasProcessed.status === "Approved"}
+                                    className={`flex-1 md:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+                                        hasProcessed.status === "Approved"
+                                            ? "bg-green-100 text-green-700 cursor-not-allowed"
+                                            : "bg-green-600 text-white hover:bg-green-700 shadow-sm"
+                                    }`}
+                                >
+                                    {hasProcessed.status === "Approved" ? "Approved" : "Change to Approve"}
+                                </button>
+                                <button
+                                    onClick={handleReject}
+                                    disabled={hasProcessed.status === "Rejected"}
+                                    className={`flex-1 md:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+                                        hasProcessed.status === "Rejected"
+                                            ? "bg-red-100 text-red-700 cursor-not-allowed"
+                                            : "bg-white text-red-600 border border-red-200 hover:bg-red-50"
+                                    }`}
+                                >
+                                    {hasProcessed.status === "Rejected" ? "Rejected" : "Change to Reject"}
+                                </button>
+                            </>
+                        ) : (
+                           <>
+                             {/* Action Buttons Group */}
+                             {isFinalAuthority ? (
+                                <>
+                                  <button onClick={() => {
+                                      approveLeave(request.userId, request.id, currentUser.id, remarks, true);
+                                      router.push("/leave/dashboard");
+                                  }} className="flex-1 md:flex-none px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 shadow-sm">
+                                     Approve
+                                  </button>
+                                  
+                                  {currentUser.role === "HR" && (
+                                     <button 
+                                        onClick={() => {
+                                            approveLeave(request.userId, request.id, currentUser.id, remarks, false);
+                                            router.push("/leave/dashboard");
+                                        }}
+                                        className="flex-1 md:flex-none px-4 py-2 bg-white text-indigo-600 border border-indigo-200 text-sm font-bold rounded-lg hover:bg-indigo-50"
+                                     >
+                                        Forward to Director
+                                     </button>
+                                  )}
+
+                                  <button onClick={handleReject} className="flex-1 md:flex-none px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-bold rounded-lg hover:bg-red-50">
+                                     Reject
+                                  </button>
+                                </>
+                             ) : (
+                                <>
+                                  <button onClick={handleApprove} className="flex-1 md:flex-none px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 shadow-sm">
+                                     Recommend
+                                  </button>
+                                  <button onClick={handleReject} className="flex-1 md:flex-none px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-bold rounded-lg hover:bg-red-50">
+                                     Not Recommend
+                                  </button>
+                                   <button onClick={handleSkip} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-200 rounded-lg text-sm">
+                                      Forward
+                                    </button>
+                                </>
+                             )}
+                           </>
+                        )}
+                    </div>
+                 </div>
+              </div>
           )}
         </div>
       </div>
