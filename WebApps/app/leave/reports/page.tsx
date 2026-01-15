@@ -2,25 +2,17 @@
 
 import { useLMS } from "@/context/LMSContext";
 import { formatDate, formatDuration } from "@/lib/utils";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 
 export default function ReportsPage() {
-  const { currentUser, leaves, users } = useLMS();
+  const { currentUser, leaves, users, balances } = useLMS();
 
   // State for filters
   const [selectedEmployee, setSelectedEmployee] = useState<string>("All");
   const [selectedType, setSelectedType] = useState<string>("All");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-
-  if (!currentUser || currentUser.role !== "HR") {
-    return (
-      <div className="p-8 text-center text-gray-500">
-        Access Denied. Only HR can view reports.
-      </div>
-    );
-  }
 
   // Helper: Get user name
   const getUserName = (userId: string) =>
@@ -48,6 +40,54 @@ export default function ReportsPage() {
 
     return true;
   });
+
+  // Summary Logic
+  const summary = useMemo(() => {
+    if (selectedEmployee === "All") return null;
+
+    const userBalance = balances.find((b) => b.userId === selectedEmployee);
+    const selectedUser = users.find((u) => u.id === selectedEmployee);
+
+    // Filter Stats (Within selected range)
+    const approvedInFilter = filteredLeaves.filter((l) => l.status === "Approved");
+    
+    // 1. Sick
+    const sickDays = approvedInFilter
+        .filter(l => l.nature === 'Sick')
+        .reduce((acc, curr) => acc + curr.daysCalculated, 0);
+
+    // 2. Casual
+    const casualDays = approvedInFilter
+        .filter(l => l.nature === 'Casual')
+        .reduce((acc, curr) => acc + curr.daysCalculates, 0);
+
+    // 3. Unpaid (Nature=Unpaid OR explicit unpaid days)
+    const unpaidDays = approvedInFilter.reduce((acc, curr) => {
+        if (curr.nature === 'Unpaid') return acc + curr.daysCalculated;
+        return acc + (curr.unpaidLeaveDays || 0);
+    }, 0);
+
+    // 4. Paid (Everything else that isn't Sick, Casual, or Unpaid portion)
+    // Formula: Total Days - Unpaid Portion - Sick - Casual
+    // Note: If nature is 'Sick' but has unpaid days, we subtract unpaid from it? 
+    // Simplified: "Paid" category usually refers to "Earned" or "Privilege".
+    // Let's count explicitly: Nature NOT IN (Sick, Casual, Unpaid) - UnpaidPortion
+    const allApprovedDays = approvedInFilter.reduce((acc, curr) => acc + curr.daysCalculated, 0);
+    const paidDays = allApprovedDays - sickDays - casualDays - unpaidDays; 
+    
+    // Safety check if calculation goes negative (unlikely with valid data)
+    const safePaid = Math.max(0, paidDays);
+
+    return {
+        user: selectedUser,
+        sickDays,
+        casualDays,
+        paidDays: safePaid,
+        unpaidDays,
+        balance: userBalance
+    };
+  }, [filteredLeaves, selectedEmployee, balances, users]);
+
 
   // Export Logic
   const handleExport = () => {
@@ -81,21 +121,70 @@ export default function ReportsPage() {
     setEndDate("");
   };
 
+  const setFilterThisMonth = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const toDateInput = (d: Date) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
+    setStartDate(toDateInput(start));
+    setEndDate(toDateInput(end));
+  }
+
+  const setFilterThisYear = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    const end = new Date(now.getFullYear(), 11, 31);
+    const toDateInput = (d: Date) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
+    setStartDate(toDateInput(start));
+    setEndDate(toDateInput(end));
+  }
+
+  if (!currentUser || currentUser.role !== "HR") {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        Access Denied. Only HR can view reports.
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Filters Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 border-b border-gray-50 pb-4">
           <h2 className="text-lg font-bold text-gray-900">Filter Options</h2>
-          <button
-            onClick={clearFilters}
-            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-          >
-            Clear Filters
-          </button>
+          
+          <div className="flex items-center gap-2">
+             {/* Quick Filters - Integrated into Header */}
+             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider hidden md:inline-block">Quick:</span>
+             <button onClick={setFilterThisMonth} className="px-2.5 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 rounded hover:bg-indigo-100 transition-colors">
+                 This Month
+             </button>
+             <button onClick={setFilterThisYear} className="px-2.5 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 rounded hover:bg-indigo-100 transition-colors">
+                 This Year
+             </button>
+             <div className="h-4 w-px bg-gray-200 mx-1 hidden md:block"></div>
+             <button
+                onClick={clearFilters}
+                className="text-xs text-gray-500 hover:text-gray-700 font-bold underline decoration-gray-300 hover:decoration-gray-500"
+            >
+                Clear All
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+           {/* Inputs (removed bottom quick filter row) */}
           {/* Employee Select */}
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
@@ -104,7 +193,7 @@ export default function ReportsPage() {
             <select
               value={selectedEmployee}
               onChange={(e) => setSelectedEmployee(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
             >
               <option value="All">All Employees</option>
               {users.map((u) => (
@@ -123,7 +212,7 @@ export default function ReportsPage() {
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
             >
               <option value="All">All Types</option>
               <option value="Casual">Casual</option>
@@ -136,72 +225,75 @@ export default function ReportsPage() {
           {/* Start Date */}
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-              Start Date (From)
+              From
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
             />
           </div>
 
           {/* End Date */}
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-              End Date (To)
+              To
             </label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
             />
-          </div>
-
-          <div className="md:col-span-4 flex items-center justify-end gap-2 pt-2 border-t border-gray-50 mt-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">
-              Quick Filters:
-            </span>
-            <button
-              onClick={() => {
-                const now = new Date();
-                const start = new Date(now.getFullYear(), now.getMonth(), 1);
-                const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                const toDateInput = (d: Date) => {
-                  const year = d.getFullYear();
-                  const month = String(d.getMonth() + 1).padStart(2, "0");
-                  const day = String(d.getDate()).padStart(2, "0");
-                  return `${year}-${month}-${day}`;
-                };
-                setStartDate(toDateInput(start));
-                setEndDate(toDateInput(end));
-              }}
-              className="px-3 py-1.5 bg-indigo-50 text-indigo-600 text-xs font-bold rounded hover:bg-indigo-100 transition-colors"
-            >
-              This Month
-            </button>
-            <button
-              onClick={() => {
-                const now = new Date();
-                const start = new Date(now.getFullYear(), 0, 1);
-                const end = new Date(now.getFullYear(), 11, 31);
-                const toDateInput = (d: Date) => {
-                  const year = d.getFullYear();
-                  const month = String(d.getMonth() + 1).padStart(2, "0");
-                  const day = String(d.getDate()).padStart(2, "0");
-                  return `${year}-${month}-${day}`;
-                };
-                setStartDate(toDateInput(start));
-                setEndDate(toDateInput(end));
-              }}
-              className="px-3 py-1.5 bg-indigo-50 text-indigo-600 text-xs font-bold rounded hover:bg-indigo-100 transition-colors"
-            >
-              This Year
-            </button>
           </div>
         </div>
       </div>
+
+      {/* Employee Summary Card - CONDITIONAL */}
+      {summary && (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 animate-in fade-in slide-in-from-top-4">
+            {/* User Info */}
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3">
+                 <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-lg">
+                    👤
+                 </div>
+                 <div>
+                     <p className="text-sm font-bold text-gray-900">{summary.user?.name}</p>
+                     <p className="text-xs text-gray-500">{summary.user?.designation}</p>
+                 </div>
+            </div>
+
+            {/* Sick */}
+            <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 shadow-sm">
+                 <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wide">Sick Leave</p>
+                 <p className="text-2xl font-bold text-rose-700 mt-1">{summary.sickDays} <span className="text-sm font-medium opacity-70">Days</span></p>
+                 <p className="text-[10px] text-rose-600/70 mt-1">Medical/Health</p>
+            </div>
+
+            {/* Casual */}
+             <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm">
+                 <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Casual Leave</p>
+                 <p className="text-2xl font-bold text-blue-700 mt-1">{summary.casualDays} <span className="text-sm font-medium opacity-70">Days</span></p>
+                 <p className="text-[10px] text-blue-600/70 mt-1">Personal/Casual</p>
+            </div>
+
+            {/* Paid/Earned */}
+            <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 shadow-sm">
+                 <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">Paid Leave</p>
+                 <p className="text-2xl font-bold text-emerald-700 mt-1">{summary.paidDays} <span className="text-sm font-medium opacity-70">Days</span></p>
+                 <p className="text-[10px] text-emerald-600/70 mt-1">Earned/Privilege</p>
+            </div>
+
+            {/* Unpaid */}
+            <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 shadow-sm">
+                 <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wide">Unpaid Leave</p>
+                 <p className="text-2xl font-bold text-amber-700 mt-1">{summary.unpaidDays} <span className="text-sm font-medium opacity-70">Days</span></p>
+                 <p className="text-[10px] text-amber-600/70 mt-1">LWP / Deducted</p>
+            </div>
+
+        </div>
+      )}
 
       {/* Results & Actions */}
       <div className="flex justify-between items-center mb-4">
