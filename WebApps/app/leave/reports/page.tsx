@@ -5,6 +5,24 @@ import { formatDate, formatDuration } from "@/lib/utils";
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 
+// Helper Component for Date Input (DD-MM-YYYY)
+const DateInput = ({ value, onChange, placeholder = "Select Date" }: { value: string, onChange: (val: string) => void, placeholder?: string }) => {
+    return (
+        <div className="relative group">
+            <div className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm flex items-center justify-between ${!value ? 'text-gray-400' : 'text-gray-900'} group-hover:border-indigo-300 transition-colors`}>
+                <span>{value ? formatDate(value) : placeholder}</span>
+                <span className="text-gray-400">📅</span>
+            </div>
+            <input
+                type="date"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+        </div>
+    );
+};
+
 export default function ReportsPage() {
   const { currentUser, leaves, users, balances } = useLMS();
 
@@ -59,7 +77,7 @@ export default function ReportsPage() {
     // 2. Casual
     const casualDays = approvedInFilter
         .filter(l => l.nature === 'Casual')
-        .reduce((acc, curr) => acc + curr.daysCalculates, 0);
+        .reduce((acc, curr) => acc + curr.daysCalculated, 0);
 
     // 3. Unpaid (Nature=Unpaid OR explicit unpaid days)
     const unpaidDays = approvedInFilter.reduce((acc, curr) => {
@@ -96,13 +114,13 @@ export default function ReportsPage() {
       Employee: getUserName(l.userId),
       Type: l.type,
       Status: l.status,
-      "Start Date": l.startDate,
-      "End Date": l.endDate,
+      "Start Date": formatDate(l.startDate), // Formatted
+      "End Date": formatDate(l.endDate),     // Formatted
       "Days/Hours":
         formatDuration(l.daysCalculated) +
         (l.type === "Short" ? " Hrs" : " Days"),
       Reason: l.reason,
-      "Applied On": l.createdAt,
+      "Applied On": formatDate(l.createdAt.split('T')[0]),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -227,11 +245,10 @@ export default function ReportsPage() {
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
               From
             </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+            <DateInput 
+                value={startDate} 
+                onChange={setStartDate} 
+                placeholder="Start Date"
             />
           </div>
 
@@ -240,11 +257,10 @@ export default function ReportsPage() {
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
               To
             </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+             <DateInput 
+                value={endDate} 
+                onChange={setEndDate} 
+                 placeholder="End Date"
             />
           </div>
         </div>
