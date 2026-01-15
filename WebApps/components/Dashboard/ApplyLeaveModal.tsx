@@ -215,7 +215,8 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
       type === "Regular" ? (nature as LeaveNature) : undefined,
       type === "Short",
       type === "Short" ? { start: shortStartTime, end: shortEndTime } : undefined,
-      attachments
+      attachments,
+      duration
     );
 
     // --- Notification Logic ---

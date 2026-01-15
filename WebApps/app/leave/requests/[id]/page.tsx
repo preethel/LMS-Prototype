@@ -405,7 +405,23 @@ export default function LeaveRequestDetails({
                 <div>
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Duration</span>
                     <span className="text-sm font-bold text-gray-900">
-                         {formatDuration(request.daysCalculated)} {request.type === "Short" ? "Hours" : "Days"}
+                        {(() => {
+                            if (request.type === "Short") {
+                                return `${formatDuration(request.daysCalculated)} Hours`;
+                            }
+                            // Calculate days/hours from stored value
+                            // Assuming stored value is "Days" where 1 day = 8 hours
+                            // If calculated correctly, e.g. 1.13 = 1 Day 1 Hour
+                            // But usually users see 1.13 and get confused. 
+                            // Let's re-use the logic: duration * 8 = total hours
+                            const totalHours = request.daysCalculated * 8;
+                            const d = Math.floor(totalHours / 8);
+                            const h = Math.round(totalHours % 8);
+                            let text = "";
+                            if (d > 0) text += `${d} Day${d > 1 ? 's' : ''}`;
+                            if (h > 0) text += `${d > 0 ? ' ' : ''}${h} Hour${h > 1 ? 's' : ''}`;
+                            return text || "0 Days";
+                        })()}
                     </span>
                 </div>
                 <div>
@@ -422,30 +438,38 @@ export default function LeaveRequestDetails({
                 </div>
              </div>
              
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Reason</span>
-                     <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-600 leading-relaxed border border-gray-100">
+                     <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-600 leading-relaxed border border-gray-100 h-25 overflow-y-auto">
                         {request.reason}
                      </div>
                 </div>
                 <div>
                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Attachments</span>
-                     {request.attachments && request.attachments.length > 0 ? (
-                        <div className="bg-white border border-gray-200 rounded-lg p-3">
-                           <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-medium text-gray-500">{request.attachments.length} Files</span>
-                              <button onClick={() => setIsAttachmentsOpen(true)} className="text-xs text-indigo-600 font-bold hover:underline">View</button>
-                           </div>
-                           <div className="flex -space-x-2">
-                              {[...Array(Math.min(3, request.attachments.length))].map((_, i) => (
-                                  <div key={i} className="w-6 h-6 rounded-full bg-gray-100 border border-white flex items-center justify-center text-[8px]">📎</div>
+                     <div className="bg-white border border-gray-200 rounded-lg p-3 h-32 overflow-y-auto">
+                        {request.attachments && request.attachments.length > 0 ? (
+                           <div className="flex flex-wrap gap-3">
+                              {request.attachments.map((file, i) => (
+                                  <div 
+                                    key={i} 
+                                    className="w-16 h-16 bg-white border border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-indigo-50 transition-colors shadow-sm" 
+                                    title={file.name || "Attachment"} 
+                                    onClick={() => setIsAttachmentsOpen(true)}
+                                  >
+                                      <span className="text-2xl">�</span>
+                                      <span className="text-[9px] text-gray-400 w-full px-1 text-center truncate mt-1">
+                                          file {i+1}
+                                      </span>
+                                  </div>
                               ))}
                            </div>
-                        </div>
-                     ) : (
-                        <span className="text-xs text-gray-400 italic">No attachments provided</span>
-                     )}
+                        ) : (
+                           <div className="h-full flex items-center justify-center text-xs text-gray-400 italic">
+                             No attachments
+                           </div>
+                        )}
+                     </div>
                 </div>
              </div>
           </div>

@@ -28,7 +28,8 @@ interface LMSContextType {
     nature?: LeaveNature,
     isShort?: boolean,
     timeRange?: { start: string; end: string },
-    attachments?: Attachment[]
+    attachments?: Attachment[],
+    duration?: number
   ) => void;
   approveLeave: (
     submiitedByUserId: string,
@@ -84,30 +85,34 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     nature?: LeaveNature,
     isShort?: boolean,
     timeRange?: { start: string; end: string },
-    attachments?: Attachment[]
+    attachments?: Attachment[],
+    duration?: number
   ) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return;
 
-    // Calculate days
     // Calculate duration
     let quantity = 0;
 
-    // Check if it's a "Regular" leave with Time (indicated by 'T' in ISO string)
-    const isRegularWithTime = type === "Regular" && start.includes("T") && end.includes("T");
+    if (duration !== undefined) {
+        quantity = duration;
+    } else {
+        // Fallback Logic (Old behavior)
+        // Check if it's a "Regular" leave with Time (indicated by 'T' in ISO string)
+        const isRegularWithTime = type === "Regular" && start.includes("T") && end.includes("T");
 
-    if (isRegularWithTime) {
-       const startDate = new Date(start);
-       const endDate = new Date(end);
-       const diffTime = endDate.getTime() - startDate.getTime();
-       // Exact Difference in Days (Float) e.g. 0.5 for half day
-       const days = diffTime / (1000 * 60 * 60 * 24);
-       quantity = Number(days.toFixed(2));
-    } else if (type === "Regular") {
-         // Standard Day-based inclusive calculation
-         const startDate = new Date(start);
-         const endDate = new Date(end);
-         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+        if (isRegularWithTime) {
+           const startDate = new Date(start);
+           const endDate = new Date(end);
+           const diffTime = endDate.getTime() - startDate.getTime();
+           // Exact Difference in Days (Float) e.g. 0.5 for half day
+           const days = diffTime / (1000 * 60 * 60 * 24);
+           quantity = Number(days.toFixed(2));
+        } else if (type === "Regular") {
+             // Standard Day-based inclusive calculation
+             const startDate = new Date(start);
+             const endDate = new Date(end);
+             const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
          // +1 because if start=10th, end=10th, it is 1 day.
          const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
          quantity = days;
@@ -121,6 +126,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
        const endDate = new Date(end);
        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
        quantity = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    }
     }
 
     // Immediate Balance Deduction
