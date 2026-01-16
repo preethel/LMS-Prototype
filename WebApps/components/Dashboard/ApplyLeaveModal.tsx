@@ -3,7 +3,7 @@
 import { useLMS } from "@/context/LMSContext";
 import { useNotification } from "@/context/NotificationContext";
 import { LeaveNature, LeaveType } from "@/lib/types";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { useMemo, useRef, useState } from "react";
 
 interface ApplyLeaveModalProps {
@@ -310,55 +310,7 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
     );
   };
 
-  const DateTimeInput = ({
-    label,
-    value,
-    onChange,
-    min,
-    required,
-  }: {
-    label: string;
-    value: string;
-    onChange: (val: string) => void;
-    min?: string;
-    required?: boolean;
-  }) => {
-    const inputRef = useRef<HTMLInputElement>(null);
 
-    return (
-      <div className="relative">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
-        <div
-          onClick={() => inputRef.current?.showPicker()}
-          className="relative cursor-pointer"
-        >
-          <input
-            type="text"
-            readOnly
-            value={value ? formatDateTime(value) : ""}
-            placeholder="DD-MM-YYYY HH:mm AM/PM"
-            required={required}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all cursor-pointer bg-white"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-            📅
-          </div>
-          <input
-            ref={inputRef}
-            type="datetime-local"
-            required={required}
-            value={value}
-            min={min}
-            onChange={(e) => onChange(e.target.value)}
-            className="absolute inset-0 opacity-0 cursor-pointer pointer-events-none"
-            tabIndex={-1}
-          />
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -521,23 +473,24 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
             {/* Row 2: Dates */}
             <div className="space-y-4">
               {/* Regular Leave Inputs: DateTime Pickers */}
+              {/* Regular Leave Inputs: Date Pickers (Time Hidden, Defaulted) */}
               {type === "Regular" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <DateTimeInput
-                          label="Start Date & Time"
+                        <DateInput
+                          label="Start Date"
                           required
-                          value={startDateTime}
-                          onChange={setStartDateTime}
+                          value={startDateTime.split('T')[0]} 
+                          onChange={(val) => setStartDateTime(`${val}T09:00`)}
                         />
                     </div>
                     <div>
-                        <DateTimeInput
-                          label="End Date & Time"
+                        <DateInput
+                          label="End Date"
                           required
-                          value={endDateTime}
-                          min={startDateTime}
-                          onChange={setEndDateTime}
+                          value={endDateTime.split('T')[0]}
+                          min={startDateTime.split('T')[0]}
+                          onChange={(val) => setEndDateTime(`${val}T17:00`)}
                         />
                     </div>
                 </div>
