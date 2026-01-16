@@ -39,13 +39,6 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
 
 export const MOCK_USERS: User[] = [
     {
-        id: 'u1',
-        name: 'Md. Redwan',
-        email: 'redwan@company.com',
-        designation: 'Software Engineer',
-        role: 'Employee',
-    },
-    {
         id: 'u2',
         name: 'Jahid Khan',
         email: 'jahid@company.com',
@@ -81,6 +74,13 @@ export const MOCK_USERS: User[] = [
         designation: 'Software Engineer',
         role: 'Employee',
     },
+    {
+        id: 'u1',
+        name: 'Md. Redwan',
+        email: 'redwan@company.com',
+        designation: 'Software Engineer',
+        role: 'Employee',
+    }
 ];
 
 export const MOCK_BALANCES: LeaveBalance[] = [
