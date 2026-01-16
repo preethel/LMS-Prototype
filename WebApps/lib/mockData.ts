@@ -40,37 +40,37 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
 export const MOCK_USERS: User[] = [
     {
         id: 'u1',
-        name: 'John Junior',
-        email: 'john@company.com',
-        designation: 'Frontend Developer',
+        name: 'Md. Redwan',
+        email: 'redwan@company.com',
+        designation: 'Software Engineer',
         role: 'Employee',
     },
     {
         id: 'u2',
-        name: 'Sarah Lead',
-        email: 'sarah@company.com',
+        name: 'Jahid Khan',
+        email: 'jahid@company.com',
         designation: 'Team Lead',
         role: 'TeamLead',
     },
     {
         id: 'u3',
-        name: 'Mike Manager',
-        email: 'mike@company.com',
+        name: 'Md. Adib',
+        email: 'adib@company.com',
         designation: 'Engineering Manager',
         role: 'Manager',
     },
     {
         id: 'u4',
-        name: 'Diana Director',
-        email: 'diana@company.com',
+        name: 'Md. Shah Alam',
+        email: 'alam@company.com',
         designation: 'Director of Engineering',
         role: 'MD',
         // No approver = Final node
     },
     {
         id: 'u6', // New HR User
-        name: 'Helen HR',
-        email: 'helen@company.com',
+        name: 'Zillur Rahman',
+        email: 'zillur@company.com',
         designation: 'HR Manager',
         role: 'HR',
     },
