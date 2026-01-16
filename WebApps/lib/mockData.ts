@@ -50,14 +50,14 @@ export const MOCK_USERS: User[] = [
         name: 'Jahid Khan',
         email: 'jahid@company.com',
         designation: 'Team Lead',
-        role: 'TeamLead',
+        role: 'Manager',
     },
     {
         id: 'u3',
         name: 'Md. Adib',
         email: 'adib@company.com',
-        designation: 'Engineering Manager',
-        role: 'Manager',
+        designation: 'Software Engineer',
+        role: 'Employee',
     },
     {
         id: 'u4',
@@ -76,9 +76,9 @@ export const MOCK_USERS: User[] = [
     },
     {
         id: 'u5',
-        name: 'Emily Employee',
-        email: 'emily@company.com',
-        designation: 'UI Designer',
+        name: 'Adnan Abdullah',
+        email: 'adnan@company.com',
+        designation: 'Software Engineer',
         role: 'Employee',
     },
 ];
