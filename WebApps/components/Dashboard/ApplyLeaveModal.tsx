@@ -1,7 +1,7 @@
 import { useLMS } from "@/context/LMSContext";
 import { useNotification } from "@/context/NotificationContext";
 import { LeaveNature, LeaveType } from "@/lib/types";
-import { formatDate, isWeekend } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { useMemo, useRef, useState } from "react";
 
 interface ApplyLeaveModalProps {
@@ -10,7 +10,7 @@ interface ApplyLeaveModalProps {
 }
 
 function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
-  const { currentUser, applyLeave, balances, users } = useLMS();
+  const { currentUser, applyLeave, balances, users, weekendDays } = useLMS();
   const { addNotification } = useNotification();
 
   const [type, setType] = useState<LeaveType>("Regular");
@@ -50,7 +50,7 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
       const current = new Date(start);
       // Iterate from start to end day inclusive
       while (current <= end) {
-        if (!isWeekend(current)) {
+        if (!weekendDays.includes(current.getDay())) {
           count++;
         }
         // Move to next day
@@ -69,7 +69,7 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
       return Number(diff.toFixed(2));
     }
     return 0;
-  }, [type, startDate, endDate, shortDate, shortStartTime, shortEndTime]);
+  }, [type, startDate, endDate, shortDate, shortStartTime, shortEndTime, weekendDays]);
 
   // --- Warnings ---
   const warning = useMemo(() => {

@@ -75,7 +75,7 @@ export default function Sidebar() {
                   pathname === "/leave/employees" ? activeClass : inactiveClass
                 }`}
               >
-                Approver Config
+                Team Allocation
               </Link>
             )}
             {currentUser.role === "HR" && (

@@ -4,7 +4,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 export default function HolidayManager() {
-  const { holidays, addHoliday, deleteHoliday, currentUser } = useLMS();
+  const { holidays, addHoliday, deleteHoliday, currentUser, weekendDays, toggleWeekendDay } = useLMS();
   const [newDate, setNewDate] = useState("");
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState<"Public" | "Company" | "Optional">("Public");
@@ -31,6 +31,32 @@ export default function HolidayManager() {
   return (
     <div className="space-y-6">
       
+      {/* Weekend Configuration */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+            Weekend Configuration
+        </h3>
+        <p className="text-xs text-gray-500 mb-4">Select the days that are considered weekends/weekly offs.</p>
+        <div className="flex flex-wrap gap-2">
+            {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((dayName, index) => {
+                const isWeekend = weekendDays.includes(index);
+                return (
+                    <button
+                        key={dayName}
+                        onClick={() => toggleWeekendDay(index)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                            isWeekend 
+                                ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" 
+                                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        }`}
+                    >
+                        {dayName}
+                    </button>
+                );
+            })}
+        </div>
+      </div>
+
       {/* Add New Holiday Form */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Add New Holiday</h3>

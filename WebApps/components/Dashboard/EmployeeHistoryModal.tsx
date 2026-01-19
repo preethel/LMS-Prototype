@@ -1,7 +1,7 @@
 "use client";
 
 import { useLMS } from "@/context/LMSContext";
-import { formatDuration } from "@/lib/utils";
+import { formatDate, formatDuration } from "@/lib/utils";
 
 interface EmployeeHistoryModalProps {
   isOpen: boolean;
@@ -66,7 +66,8 @@ export default function EmployeeHistoryModal({
               <thead className="bg-gray-50 text-gray-500 font-medium">
                 <tr>
                   <th className="px-4 py-3 rounded-l-lg">Type</th>
-                  <th className="px-4 py-3">Dates</th>
+                  <th className="px-4 py-3">Start Date</th>
+                  <th className="px-4 py-3">End Date</th>
                   <th className="px-4 py-3">Duration</th>
                   <th className="px-4 py-3 rounded-r-lg">Reason</th>
                 </tr>
@@ -83,12 +84,10 @@ export default function EmployeeHistoryModal({
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      {leave.startDate === leave.endDate
-                        ? leave.startDate
-                        : `${leave.startDate} to ${leave.endDate
-                          .split("-")
-                          .slice(1)
-                          .join("-")}`}
+                      {formatDate(leave.startDate)}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {formatDate(leave.endDate)}
                     </td>
                     <td className="px-4 py-3 text-indigo-600 font-semibold">
                       {formatDuration(leave.daysCalculated)}{" "}

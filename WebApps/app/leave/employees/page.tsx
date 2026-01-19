@@ -4,12 +4,15 @@ import { useLMS } from "@/context/LMSContext";
 import { User } from "@/lib/types";
 import { useState } from "react";
 
+import HolidayManager from "@/components/Dashboard/HolidayManager";
+
 export default function EmployeeManagementPage() {
   const { users, currentUser, updateUserApprovers } = useLMS();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempApprovers, setTempApprovers] = useState<string[]>([]);
   const [availableApproverId, setAvailableApproverId] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"employees" | "holidays">("employees");
 
   // Only Admin/HR/Manager?? For prototype, let's assume current user can manage everyone or just filtering?
   // Let's list all "Employees" for now.
@@ -60,8 +63,24 @@ export default function EmployeeManagementPage() {
 
   return (
     <div>
-      
+        <div className="flex items-center gap-4 mb-6">
+            <button 
+                onClick={() => setActiveTab("employees")}
+                className={`px-4 py-2 font-bold text-sm rounded-lg transition-colors ${activeTab === 'employees' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+            >
+                Employees & Approvals
+            </button>
+            <button 
+                onClick={() => setActiveTab("holidays")}
+                className={`px-4 py-2 font-bold text-sm rounded-lg transition-colors ${activeTab === 'holidays' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+            >
+                Holiday & Weekend Manager
+            </button>
+        </div>
 
+      {activeTab === "holidays" ? (
+          <HolidayManager />
+      ) : (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 text-gray-500 font-medium">
@@ -123,6 +142,7 @@ export default function EmployeeManagementPage() {
           </tbody>
         </table>
       </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && selectedUser && (

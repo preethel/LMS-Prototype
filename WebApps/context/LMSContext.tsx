@@ -2,13 +2,13 @@
 
 import { MOCK_BALANCES, MOCK_HOLIDAYS, MOCK_LEAVES, MOCK_USERS } from "@/lib/mockData";
 import {
-    Attachment,
-    DelegationHistory,
-    LeaveBalance,
-    LeaveNature,
-    LeaveRequest,
-    LeaveType,
-    User
+  Attachment,
+  DelegationHistory,
+  LeaveBalance,
+  LeaveNature,
+  LeaveRequest,
+  LeaveType,
+  User
 } from "@/lib/types";
 import { ReactNode, createContext, useContext, useState } from "react";
 
@@ -62,6 +62,9 @@ interface LMSContextType {
   holidays: import("@/lib/types").Holiday[];
   addHoliday: (name: string, date: string, type: 'Public' | 'Company' | 'Optional') => void;
   deleteHoliday: (id: string) => void;
+  // Weekends
+  weekendDays: number[]; // 0=Sun, 1=Mon, ... 6=Sat
+  toggleWeekendDay: (day: number) => void;
 }
 
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
@@ -72,6 +75,17 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
   const [leaves, setLeaves] = useState<LeaveRequest[]>(MOCK_LEAVES);
   const [balances, setBalances] = useState<LeaveBalance[]>(MOCK_BALANCES);
   const [holidays, setHolidays] = useState<import("@/lib/types").Holiday[]>(MOCK_HOLIDAYS); 
+  const [weekendDays, setWeekendDays] = useState<number[]>([5, 6]); // Default: Fri (5), Sat (6)
+
+  const toggleWeekendDay = (day: number) => {
+      setWeekendDays(prev => {
+          if (prev.includes(day)) {
+              return prev.filter(d => d !== day);
+          } else {
+              return [...prev, day].sort();
+          }
+      });
+  }; 
   
   // Use effect or direct init if import allows, but explicit import in useState might be quirky. 
   // Let's use the imported MOCK_HOLIDAYS from line 3 if possible, or re-import properly.
@@ -1052,7 +1066,8 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         holidays,
         addHoliday,
         deleteHoliday,
-
+        weekendDays,
+        toggleWeekendDay,
       }}
     >
       {children}
