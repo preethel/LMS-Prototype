@@ -270,7 +270,9 @@ export default function ApprovalsList({
                     <td className="px-6 py-4">
                       <div>
                         <div className="font-semibold text-gray-900">{applicant?.name || "Unknown User"}</div>
-                        <div className="text-xs text-gray-500">{applicant?.designation || "N/A"}</div>
+                        <div className="text-xs text-gray-500">
+                            {applicant?.designation || "N/A"} {applicant?.employeeCode ? `(${applicant.employeeCode})` : ""}
+                        </div>
                         
                         {request.currentApproverId &&
                           request.currentApproverId !== currentUser.id && canAct && (

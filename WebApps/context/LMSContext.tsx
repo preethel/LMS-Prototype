@@ -1,14 +1,14 @@
 "use client";
 
-import { MOCK_BALANCES, MOCK_LEAVES, MOCK_USERS } from "@/lib/mockData";
+import { MOCK_BALANCES, MOCK_HOLIDAYS, MOCK_LEAVES, MOCK_USERS } from "@/lib/mockData";
 import {
-  Attachment,
-  DelegationHistory,
-  LeaveBalance,
-  LeaveNature,
-  LeaveRequest,
-  LeaveType,
-  User
+    Attachment,
+    DelegationHistory,
+    LeaveBalance,
+    LeaveNature,
+    LeaveRequest,
+    LeaveType,
+    User
 } from "@/lib/types";
 import { ReactNode, createContext, useContext, useState } from "react";
 
@@ -58,7 +58,10 @@ interface LMSContextType {
     newRemarks: string
   ) => void;
   updateUnpaidLeaveDays: (leaveId: string, days: number) => void;
-
+  // Holidays
+  holidays: import("@/lib/types").Holiday[];
+  addHoliday: (name: string, date: string, type: 'Public' | 'Company' | 'Optional') => void;
+  deleteHoliday: (id: string) => void;
 }
 
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
@@ -68,6 +71,31 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [leaves, setLeaves] = useState<LeaveRequest[]>(MOCK_LEAVES);
   const [balances, setBalances] = useState<LeaveBalance[]>(MOCK_BALANCES);
+  const [holidays, setHolidays] = useState<import("@/lib/types").Holiday[]>(MOCK_HOLIDAYS); 
+  
+  // Use effect or direct init if import allows, but explicit import in useState might be quirky. 
+  // Let's use the imported MOCK_HOLIDAYS from line 3 if possible, or re-import properly.
+  // Line 3 has: import { MOCK_BALANCES, MOCK_LEAVES, MOCK_USERS } from "@/lib/mockData";
+  // I need to add MOCK_HOLIDAYS to that import first? No, I can just use require or fix the top import.
+  // Actually, I'll just init with empty and load, OR fix the top import. Best to fix top import.
+  // For now, let's just fix the duplicate line and use empty array or hardcoded for safety until I fix imports.
+  // Actually, I'll just add MOCK_HOLIDAYS to the top import in a separate step if needed, or dynamically require.
+  // Wait, I can just use the fully qualified import if it works, but the error said property does not exist on Promise.
+  // Ah, `import(...)` returns a Promise if used as expression? No, `import type` is different.
+  // Let's just fix the duplicate `leaves` line first.
+
+  const addHoliday = (name: string, date: string, type: 'Public' | 'Company' | 'Optional') => {
+      setHolidays(prev => [...prev, {
+          id: `h${Date.now()}`,
+          name,
+          date,
+          type
+      }]);
+  };
+
+  const deleteHoliday = (id: string) => {
+      setHolidays(prev => prev.filter(h => h.id !== id));
+  };
 
   const login = (userId: string) => {
     const user = users.find((u) => u.id === userId);
@@ -131,29 +159,101 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Immediate Balance Deduction
+
+    // Immediate Balance Deduction Logic
     setBalances((prevBal) =>
       prevBal.map((b) => {
         if (b.userId === userId) {
           if (type === "Short") {
-            return { ...b, usedHours: (b.usedHours || 0) + quantity };
+            // New Logic: 
+            // 1. Try to deduct from Casual Leave (Hours to Days conversion: 8 hours = 1 day)
+            // 2. If not enough Casual, mark as Unpaid (conceptually) or just track as usedHours.
+            // User requirement: "casual leave theke deduct hobe. jokhon shesh..., tokhon unpaid"
+            
+            const hoursAsDays = quantity / 8;
+            const remainingCasual = (b.casualQuota || 0) - (b.casualUsed || 0);
+
+            if (remainingCasual >= hoursAsDays) {
+                // Deduct from Casual
+                return { 
+                    ...b, 
+                    usedHours: (b.usedHours || 0) + quantity,
+                    casualUsed: (b.casualUsed || 0) + hoursAsDays 
+                };
+            } else {
+                // Not enough Casual -> Unpaid
+                // Deduct what is possible? Or all Unpaid? 
+                // "jokhon shesh hoye jabe" implies if exhausted, THEN unpaid.
+                // Simplified: If exhausted, do NOT increment casualUsed, just increment usedHours (and maybe tracking unpaid elsewhere if needed).
+                // Or we can simple allow negative/overdraft if that's the system.
+                // But usually fallback means use Unpaid Quota (or just track as Unpaid).
+                // Let's just track `usedHours` as usual, but we ONLY increment `casualUsed` if we had balance.
+                // Wait, if I don't increment casualUsed, the balance remains same.
+                // User said "deduct from casual". So I MUST increment casualUsed IF available.
+                
+                // Let's implement partial? No, simpler: check if fully covered.
+                // If not covered, fallback to Unpaid (don't touch Casual).
+                // Or deduction until 0?
+                // Let's do: Deduct from Casual as much as possible? No, usually "Is Paid?" check.
+                // If I have 0.5 Casual days left and request 0.25 days (2 hrs), it deducts.
+                // If I have 0 Casual days, it is Unpaid.
+                
+                // We'll increment casualUsed ONLY if remainingCasual > 0. 
+                // Actually, let's keep it simple: If effective balance allows, deduct.
+                // If not, it's unpaid (no casual deduction).
+                
+                if (remainingCasual > 0) {
+                     // Even if partial? Let's check if we can cover at least some?
+                     // Let's assumes strictly: If you have balance, use it.
+                     const toDeduct = Math.min(remainingCasual, hoursAsDays);
+                     // If we only deduct partial, the rest is unpaid. 
+                     // But `casualUsed` is simple counter.
+                     return {
+                        ...b,
+                        usedHours: (b.usedHours || 0) + quantity,
+                        casualUsed: (b.casualUsed || 0) + toDeduct
+                     }
+                }
+                
+                // Else, pure Unpaid (only hours tracked for record)
+                return { ...b, usedHours: (b.usedHours || 0) + quantity };
+            }
+
           } else {
-            return { ...b, usedDays: (b.usedDays || 0) + quantity };
+             // Regular Logic (Nature specific)
+             if (nature === 'Casual') return { ...b, casualUsed: (b.casualUsed || 0) + quantity };
+             if (nature === 'Sick') return { ...b, sickUsed: (b.sickUsed || 0) + quantity };
+             // ... others ...
+             return b; // For 'Other'/'Unpaid' we might not deduct from quota, just track.
           }
         }
         return b;
       })
     );
 
+    // Determine nature for the record
+    // If it was Short, and we deducted from Casual, effectively nature is "Casual"
+    // If we didn't (fallback), it is "Unpaid".
+    // We need to mirror the balance logic calculation to set the correct nature in the leave request object.
+    let finalNature = nature;
+    if (type === "Short") {
+        const userBal = balances.find(b => b.userId === userId);
+        if (userBal) {
+            const hoursAsDays = quantity / 8;
+            const remainingCasual = (userBal.casualQuota || 0) - (userBal.casualUsed || 0);
+            if (remainingCasual >= hoursAsDays) finalNature = "Casual";
+            else finalNature = "Unpaid";
+        } else {
+            finalNature = "Unpaid"; // Safety
+        }
+    }
+
     // Determine Initial Approver
-    // If sequential approvers are set, use the first one.
-    // Otherwise, default to HR (or could be Manager if we had that logic, but now purely sequential + role based).
-    // Let's assume valid setup requires sequential approvers OR we send to HR if list is empty.
     let initialApproverId: string | undefined;
 
     if (user.sequentialApprovers && user.sequentialApprovers.length > 0) {
       initialApproverId = user.sequentialApprovers[0];
     } else {
-      // Fallback: Send to HR directly if no sequence defined
       const hrUser = users.find((u) => u.role === "HR");
       initialApproverId = hrUser?.id;
     }
@@ -162,7 +262,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
       id: `l${Date.now()}`,
       userId,
       type,
-      nature,
+      nature: finalNature, // Use calculated nature
       startDate: start,
       endDate: end,
       reason,
@@ -171,7 +271,7 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
       approvalChain: [],
       createdAt: new Date().toISOString(),
       daysCalculated: quantity,
-      unpaidLeaveDays: 0,
+      unpaidLeaveDays: finalNature === 'Unpaid' && type === 'Regular' ? quantity : 0, // Simplified
       startTime: timeRange?.start,
       endTime: timeRange?.end,
       attachments: attachments || [],
@@ -949,6 +1049,9 @@ export const LMSProvider = ({ children }: { children: ReactNode }) => {
         extendDelegation,
         updateDelegation,
         updateUserApprovers,
+        holidays,
+        addHoliday,
+        deleteHoliday,
 
       }}
     >

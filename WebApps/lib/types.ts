@@ -15,6 +15,14 @@ export interface User {
     delegationEndDate?: string; // ISO Date Time string
     sequentialApprovers?: string[]; // Ordered list of approver IDs for sequential flow
     delegationHistory?: DelegationHistory[];
+    employeeCode?: string; // HR Identifier
+}
+
+export interface Holiday {
+    id: string;
+    date: string; // ISO Date (YYYY-MM-DD)
+    name: string;
+    type: 'Public' | 'Company' | 'Optional';
 }
 
 export interface DelegationHistory {

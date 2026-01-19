@@ -1,7 +1,9 @@
 "use client";
 
+import ActionModal from "@/components/Dashboard/ActionModal";
 import AttachmentsModal from "@/components/Dashboard/AttachmentsModal";
 import EmployeeHistoryModal from "@/components/Dashboard/EmployeeHistoryModal";
+import LeaveCalendarModal from "@/components/Dashboard/LeaveCalendarModal";
 import { useLMS } from "@/context/LMSContext";
 import { useNotification } from "@/context/NotificationContext";
 import { formatDate, formatDateTime, formatDuration } from "@/lib/utils";
@@ -32,6 +34,17 @@ export default function LeaveRequestDetails({
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // New State for Modal/Calendar
+  const [calendarData, setCalendarData] = useState<{ start: string, end: string } | null>(null);
+  const [actionModal, setActionModal] = useState<{
+        isOpen: boolean;
+        type: "approve" | "reject";
+        isFinal?: boolean; // For HR/Director differentiation
+  }>({
+        isOpen: false,
+        type: "approve"
+  });
 
   const { id } = use(params);
   const request = leaves.find((l) => l.id === id);
@@ -217,7 +230,7 @@ export default function LeaveRequestDetails({
       date: request.createdAt,
       status: "Applied",
       actor: requester?.name,
-      role: requester?.designation,
+      role: requester?.designation + (requester?.employeeCode ? ` (${requester.employeeCode})` : ""),
     });
 
     // 2. Past Actions (Approval Chain)
@@ -251,7 +264,7 @@ export default function LeaveRequestDetails({
         date: step.date,
         status: step.status as any, // Cast specific approval status to general status
         actor: actor?.name,
-        role: actor?.designation,
+        role: actor?.designation + (actor?.employeeCode ? ` (${actor.employeeCode})` : ""),
       };
 
       // Add delegation note to remarks if present (or handle display otherwise)
@@ -291,7 +304,7 @@ export default function LeaveRequestDetails({
             title: "Currently Pending",
             status: "Pending",
             actor: currentParams.name,
-            role: currentParams.designation,
+            role: currentParams.designation + (currentParams.employeeCode ? ` (${currentParams.employeeCode})` : ""),
           });
         }
       }
@@ -306,7 +319,7 @@ export default function LeaveRequestDetails({
               title: "Up Next",
               status: "Upcoming",
               actor: u.name,
-              role: u.designation,
+              role: u.designation + (u.employeeCode ? ` (${u.employeeCode})` : ""),
             });
           }
         }
@@ -329,7 +342,7 @@ export default function LeaveRequestDetails({
             title: "Up Next",
             status: "Upcoming",
             actor: hrUser.name,
-            role: hrUser.designation,
+            role: hrUser.designation + (hrUser.employeeCode ? ` (${hrUser.employeeCode})` : ""),
           });
         }
       }
@@ -506,15 +519,44 @@ export default function LeaveRequestDetails({
                 </div>
                 <div>
                   <p className="font-bold text-gray-900 text-sm">{requester?.name}</p>
-                  <p className="text-gray-500 text-xs">{requester?.designation}</p>
+                  <p className="text-gray-500 text-xs">
+                    {requester?.designation} {requester?.employeeCode ? `(${requester.employeeCode})` : ""}
+                  </p>
                 </div>
              </div>
-             <button
-                 onClick={() => setIsHistoryOpen(true)}
-                 className="text-indigo-600 text-xs font-bold hover:underline"
-              >
-                 View History
-              </button>
+             
+             <div className="flex items-center gap-4">
+                 {/* Balance Display */}
+                 {requesterBalance && (
+                     <div className="text-right hidden sm:block">
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Available Balance</p>
+                         <div className="flex items-center justify-end gap-2 text-xs font-bold text-gray-700">
+                             <span className="bg-green-50 text-green-700 px-1.5 py-0.5 rounded border border-green-100" title="Casual Leave">
+                                C: {(requesterBalance.casualQuota || 0) - (requesterBalance.casualUsed || 0)}
+                             </span>
+                             <span className="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded border border-purple-100" title="Sick Leave">
+                                S: {(requesterBalance.sickQuota || 0) - (requesterBalance.sickUsed || 0)}
+                             </span>
+                         </div>
+                     </div>
+                 )}
+                 
+                 <div className="h-8 w-px bg-gray-200 mx-2 hidden sm:block"></div>
+
+                 <button
+                     onClick={() => setCalendarData({ start: request.startDate, end: request.endDate })}
+                     className="text-indigo-600 text-xs font-bold hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors border border-indigo-100 flex items-center gap-1"
+                  >
+                     📅 Check Calendar
+                  </button>
+                  
+                  <button
+                     onClick={() => setIsHistoryOpen(true)}
+                     className="text-gray-600 text-xs font-bold hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors border border-gray-200"
+                  >
+                     View History
+                  </button>
+             </div>
           </div>
 
           {/* Body: Compact Details Grid */}
@@ -688,20 +730,20 @@ export default function LeaveRequestDetails({
                                      </button>
                                   )}
 
-                                  <button onClick={handleReject} className="flex-1 md:flex-none px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-bold rounded-lg hover:bg-red-50">
-                                     Reject
+                                  <button onClick={() => setActionModal({ isOpen: true, type: "reject" })} disabled={isSubmitting} className="flex-1 md:flex-none px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-bold rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-wait">
+                                     {isSubmitting ? "Rejecting..." : "Reject"}
                                   </button>
                                 </>
                              ) : (
                                 <>
-                                  <button onClick={handleApprove} className="flex-1 md:flex-none px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 shadow-sm">
-                                     Approve
+                                  <button onClick={handleApprove} disabled={isSubmitting} className="flex-1 md:flex-none px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 shadow-sm disabled:opacity-50 disabled:cursor-wait">
+                                     {isSubmitting ? "Processing..." : "Approve"}
                                   </button>
-                                  <button onClick={handleReject} className="flex-1 md:flex-none px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-bold rounded-lg hover:bg-red-50">
-                                     Reject
+                                  <button onClick={() => setActionModal({ isOpen: true, type: "reject" })} disabled={isSubmitting} className="flex-1 md:flex-none px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-bold rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-wait">
+                                     {isSubmitting ? "Processing..." : "Reject"}
                                   </button>
-                                   <button onClick={handleSkip} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-200 rounded-lg text-sm">
-                                      Forward
+                                   <button onClick={handleSkip} disabled={isSubmitting} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:cursor-wait">
+                                      {isSubmitting ? "..." : "Forward"}
                                     </button>
                                 </>
                              )}
@@ -726,6 +768,64 @@ export default function LeaveRequestDetails({
         onClose={() => setIsAttachmentsOpen(false)}
         attachments={request.attachments || []}
       />
+
+       {calendarData && (
+        <LeaveCalendarModal
+          isOpen={!!calendarData}
+          onClose={() => setCalendarData(null)}
+          startDate={calendarData.start}
+          endDate={calendarData.end}
+        />
+      )}
+
+      {/* Action Modal for Rejection */}
+      {actionModal.isOpen && (
+        <ActionModal
+          isOpen={actionModal.isOpen}
+          onClose={() => setActionModal({ ...actionModal, isOpen: false })}
+          title={actionModal.type === "approve" ? "Approve Request" : "Reject Request"}
+          message={
+            actionModal.type === "approve"
+              ? `Are you sure you want to approve this request?`
+              : `Are you sure you want to reject this request?`
+          }
+          type={actionModal.type === "approve" ? "success" : "danger"}
+          confirmLabel={actionModal.type === "approve" ? "Approve" : "Reject"}
+          inputRequired={actionModal.type === "reject"} // Require reason for rejection
+          showInput={true}
+          inputPlaceholder="Enter remarks..."
+          onConfirm={(modalRemarks) => {
+             // If remarks entered in modal, use them. Else use the page remarks state.
+             const finalRemarks = modalRemarks || remarks;
+             if (actionModal.type === 'reject') {
+                 // Trigger handleReject with logic inside
+                 // Only difference: we now have confirmation.
+                 // We can call handleAction wrapper manually here.
+                 handleAction(() => {
+                    if (hasProcessed) {
+                        editApproval(request.id, currentUser.id, "Rejected", finalRemarks);
+                    } else {
+                        rejectLeave(request.id, currentUser.id, finalRemarks);
+                    }
+                    
+                    // Notify
+                    if (requester && requester.id !== currentUser.id) {
+                        addNotification({
+                            userId: requester.id,
+                            title: "Leave Request Rejected",
+                            message: `Your leave request has been Rejected by ${currentUser.name}.`,
+                            type: "error",
+                            link: `/leave/requests/${request.id}`,
+                        });
+                    }
+                 });
+             } else {
+                 // Future: Approve Modal if needed
+             }
+          }}
+        />
+      )}
+
     </div>
   );
 }

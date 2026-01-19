@@ -44,6 +44,7 @@ export const MOCK_USERS: User[] = [
         email: 'jahid@company.com',
         designation: 'Team Lead',
         role: 'Manager',
+        employeeCode: 'EMP002',
     },
     {
         id: 'u3',
@@ -51,6 +52,7 @@ export const MOCK_USERS: User[] = [
         email: 'adib@company.com',
         designation: 'Software Engineer',
         role: 'Employee',
+        employeeCode: 'EMP003',
     },
     {
         id: 'u4',
@@ -58,6 +60,7 @@ export const MOCK_USERS: User[] = [
         email: 'alam@company.com',
         designation: 'Director of Engineering',
         role: 'MD',
+        employeeCode: 'EMP004',
         // No approver = Final node
     },
     {
@@ -66,6 +69,7 @@ export const MOCK_USERS: User[] = [
         email: 'zillur@company.com',
         designation: 'HR Manager',
         role: 'HR',
+        employeeCode: 'HR001',
     },
     {
         id: 'u5',
@@ -73,6 +77,7 @@ export const MOCK_USERS: User[] = [
         email: 'adnan@company.com',
         designation: 'Software Engineer',
         role: 'Employee',
+        employeeCode: 'EMP005',
     },
     {
         id: 'u1',
@@ -80,7 +85,16 @@ export const MOCK_USERS: User[] = [
         email: 'redwan@company.com',
         designation: 'Software Engineer',
         role: 'Employee',
+        employeeCode: 'EMP001',
     }
+];
+
+export const MOCK_HOLIDAYS: import('./types').Holiday[] = [
+    { id: 'h1', date: '2024-02-21', name: 'Language Movement Day', type: 'Public' },
+    { id: 'h2', date: '2024-03-26', name: 'Independence Day', type: 'Public' },
+    { id: 'h3', date: '2024-04-14', name: 'Bengali New Year', type: 'Public' },
+    { id: 'h4', date: '2024-05-01', name: 'May Day', type: 'Public' },
+    { id: 'h5', date: '2024-06-17', name: 'Eid-ul-Adha', type: 'Public' },
 ];
 
 export const MOCK_BALANCES: LeaveBalance[] = [

@@ -1,9 +1,7 @@
-"use client";
-
 import { useLMS } from "@/context/LMSContext";
 import { useNotification } from "@/context/NotificationContext";
 import { LeaveNature, LeaveType } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, isWeekend } from "@/lib/utils";
 import { useMemo, useRef, useState } from "react";
 
 interface ApplyLeaveModalProps {
@@ -18,126 +16,86 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
   const [type, setType] = useState<LeaveType>("Regular");
   const [nature, setNature] = useState<LeaveNature | "">("Casual");
   
-  // Consolidated DateTime State for Regular Leave
-  // Default to Today 09:00 AM and Today 05:00 PM
-  const [startDateTime, setStartDateTime] = useState(() => {
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    return `${today}T09:00`;
+  // HR: Employee Selection
+  const isHR = currentUser?.role === "HR";
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+  // Determine who we are applying for:
+  const targetUserId = isHR && selectedEmployeeId ? selectedEmployeeId : currentUser?.id || "";
+  const targetUser = users.find(u => u.id === targetUserId);
+
+  // --- State for Regular Leave (Days) ---
+  const [startDate, setStartDate] = useState(() => {
+    return new Date().toISOString().split("T")[0];
   });
-  const [endDateTime, setEndDateTime] = useState(() => {
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    return `${today}T17:00`;
+  const [endDate, setEndDate] = useState(() => {
+    return new Date().toISOString().split("T")[0];
   });
 
-  const [reason, setReason] = useState("");
-
-  // Short Leave State (remains Day + Start/End Time for intraday)
+  // --- State for Short Leave (Hourly) ---
   const [shortDate, setShortDate] = useState("");
   const [shortStartTime, setShortStartTime] = useState("");
   const [shortEndTime, setShortEndTime] = useState("");
 
-  // Helper to init default times if needed
-  // User asked for "Initial 9:00AM / 5:00PM" logic. 
-  // With datetime-local, we usually need a date. 
-  // We can let user pick, or defaulted on mount? Let's keep it empty for explicit user selection to avoid accidental "today" submissions.
+  const [reason, setReason] = useState("");
 
-  // Derived State: Duration
+  // --- Duration Calculation ---
   const duration = useMemo(() => {
-    if (type === "Regular" && startDateTime && endDateTime) {
-      const start = new Date(startDateTime);
-      const end = new Date(endDateTime);
-      
-      if (end <= start) return 0;
+    if (type === "Regular" && startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
 
-      // Workday Defines
-      const WORK_START_HOUR = 9;
-      const WORK_END_HOUR = 17;
-      const MINS_PER_DAY = (WORK_END_HOUR - WORK_START_HOUR) * 60; // 480 mins
+      if (end < start) return 0;
 
-      // Helper: Get minutes from midnight
-      const getMins = (d: Date) => d.getHours() * 60 + d.getMinutes();
-      
-      const startDay = new Date(start).setHours(0,0,0,0);
-      const endDay = new Date(end).setHours(0,0,0,0);
-      
-      let totalMins = 0;
-
-      if (startDay === endDay) {
-         // Same Day
-         // Clamp start/end to work hours
-         const sMins = Math.max(getMins(start), WORK_START_HOUR * 60);
-         const eMins = Math.min(getMins(end), WORK_END_HOUR * 60);
-         
-         const diff = eMins - sMins;
-         totalMins = diff > 0 ? diff : 0;
-      } else {
-         // Different Days
-         
-         // 1. Start Day contribution (Start Time -> 17:00)
-         const sMins = Math.max(getMins(start), WORK_START_HOUR * 60);
-         const sContribution = Math.max(0, (WORK_END_HOUR * 60) - sMins);
-         
-         // 2. End Day contribution (09:00 -> End Time)
-         const eMins = Math.min(getMins(end), WORK_END_HOUR * 60);
-         const eContribution = Math.max(0, eMins - (WORK_START_HOUR * 60));
-         
-         // 3. Full Days Between
-         const oneDay = 24 * 60 * 60 * 1000;
-         const diffDays = Math.round((endDay - startDay) / oneDay);
-         const fullDays = diffDays - 1; 
-         
-         totalMins = sContribution + eContribution + (fullDays * MINS_PER_DAY);
+      let count = 0;
+      const current = new Date(start);
+      // Iterate from start to end day inclusive
+      while (current <= end) {
+        if (!isWeekend(current)) {
+          count++;
+        }
+        // Move to next day
+        current.setDate(current.getDate() + 1);
       }
-
-      // Final Duration in Days
-      const days = totalMins / MINS_PER_DAY;
-      
-      // Round to 2 decimals, but if it's practically integer (e.g. 1.00), allow it.
-      return Number(days.toFixed(2));
+      return count;
 
     } else if (type === "Short" && shortDate && shortStartTime && shortEndTime) {
-      // Short leave duration (Hours)
+      // Short leave duration calculation (Hours)
       const [startH, startM] = shortStartTime.split(":").map(Number);
       const [endH, endM] = shortEndTime.split(":").map(Number);
-      let diff = endH - startH + (endM - startM) / 60;
+      
+      let diff = (endH + endM / 60) - (startH + startM / 60);
       if (diff < 0) diff = 0;
-      return diff;
+      
+      return Number(diff.toFixed(2));
     }
     return 0;
-  }, [type, startDateTime, endDateTime, shortDate, shortStartTime, shortEndTime]);
+  }, [type, startDate, endDate, shortDate, shortStartTime, shortEndTime]);
 
-  // Derived State: Warning
+  // --- Warnings ---
   const warning = useMemo(() => {
     if (
-      type === "Regular" &&
-      duration > 0 &&
-      currentUser &&
-      balances &&
-      nature
+        type === "Regular" &&
+        duration > 0 &&
+        targetUserId &&
+        balances &&
+        nature
     ) {
-      const myBalance = balances.find((b) => b.userId === currentUser.id);
-      if (myBalance) {
-        if (nature === "Sick") {
-          const remainingSick =
-            (myBalance.sickQuota || 10) - (myBalance.sickUsed || 0);
-          if (duration > remainingSick) {
-            return `Warning: You have ${remainingSick} Sick Leave days remaining. Applying for ${duration} days will exceed your quota.`;
-          }
-        } else if (nature === "Casual") {
-          const remainingCasual =
-            (myBalance.casualQuota || 10) - (myBalance.casualUsed || 0);
-          if (duration > remainingCasual) {
-            return `Warning: You have ${remainingCasual} Casual Leave days remaining. Applying for ${duration} days will exceed your quota.`;
-          }
+        const myBalance = balances.find((b) => b.userId === targetUserId);
+        if (myBalance) {
+             if (nature === "Sick") {
+                const remainingSick = (myBalance.sickQuota || 14) - (myBalance.sickUsed || 0); // Assuming 14 default if undefined
+                if (duration > remainingSick) return `Warning: Exceeds remaining Sick Leave (${remainingSick} days).`;
+             } else if (nature === "Casual") {
+                const remainingCasual = (myBalance.casualQuota || 10) - (myBalance.casualUsed || 0);
+                if (duration > remainingCasual) return `Warning: Exceeds remaining Casual Leave (${remainingCasual} days).`;
+             }
         }
-      }
     }
     return "";
-  }, [type, duration, currentUser, balances, nature]);
+  }, [type, duration, targetUserId, balances, nature]);
 
-  // File Upload State
+
+  // --- File Upload ---
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState("");
 
@@ -145,492 +103,335 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       setFileError("");
-
-      // Combined list
       const totalFiles = [...selectedFiles, ...newFiles];
-
-      // 1. Validate Count
       if (totalFiles.length > 5) {
         setFileError("Maximum 5 files allowed.");
         return;
       }
-
-      // 2. Validate Size
-      const oversizedFiles = newFiles.filter(
-        (file) => file.size > 10 * 1024 * 1024
-      ); // 10MB
+      const oversizedFiles = newFiles.filter(file => file.size > 10 * 1024 * 1024);
       if (oversizedFiles.length > 0) {
-        setFileError(`File ${oversizedFiles[0].name} exceeds 10MB limit.`);
+        setFileError(`File ${oversizedFiles[0].name} exceeds 10MB.`);
         return;
       }
-
       setSelectedFiles(totalFiles);
     }
   };
 
   const removeFile = (index: number) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-    setFileError("");
   };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
+    if (isHR && !selectedEmployeeId) {
+        alert("Please select an employee.");
+        return;
+    }
 
-    // Basic validation
     if (!reason) return;
-    if (type === "Regular" && (!startDateTime || !endDateTime)) return;
-    if (type === "Regular" && !nature) return;
+    if (type === "Regular" && (!startDate || !endDate)) return;
+    if (type === "Regular" && !nature) return; 
     if (type === "Short" && (!shortDate || !shortStartTime || !shortEndTime)) return;
 
-    // Mock File Upload (Convert File objects to Attachments)
+    // Convert Files
     const attachments = selectedFiles.map((file) => ({
       id: `f${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: file.name,
       size: file.size,
       type: file.type,
-      url: URL.createObjectURL(file), // Mock URL for blob
+      url: URL.createObjectURL(file), 
     }));
 
-    // Prepare Dates
     let finalStart = "";
     let finalEnd = "";
 
     if (type === "Regular") {
-      finalStart = startDateTime; // Already ISO-like YYYY-MM-DDTHH:mm
-      finalEnd = endDateTime;
+        // For Regular, we assume full days. 
+        // We can append arbitrary times (e.g. 00:00 - 23:59) or just keep dates if backend supports it.
+        // Based on previous code, it used T09:00 / T17:00. Let's stick to that for consistency if needed, 
+        // or just send ISO Date string. The context implies string dates are OK.
+        finalStart = `${startDate}T09:00:00`; 
+        finalEnd = `${endDate}T17:00:00`;
     } else {
-       // Short leave construction
-       finalStart = `${shortDate}T${shortStartTime}`;
-       finalEnd = `${shortDate}T${shortEndTime}`;
+        finalStart = `${shortDate}T${shortStartTime}`;
+        finalEnd = `${shortDate}T${shortEndTime}`;
     }
 
-    // Perform Application
     applyLeave(
-      currentUser.id,
+      targetUserId,
       type,
       finalStart,
       finalEnd,
       reason,
-      type === "Regular" ? (nature as LeaveNature) : undefined,
-      type === "Short",
+      nature as LeaveNature, // Pass nature for both
+      type === "Short", // isShortLeave
       type === "Short" ? { start: shortStartTime, end: shortEndTime } : undefined,
       attachments,
       duration
     );
 
-    // --- Notification Logic ---
-
-    // 1. Notify Applicant (Self)
-    addNotification({
-      userId: currentUser.id,
-      title: "Application Submitted",
-      message: `Your ${type} leave application has been submitted successfully.`,
-      type: "success",
-      link: "/dashboard/my-applications",
-    });
-
-    // 2. Notify Approver
-    const approverId = currentUser.sequentialApprovers?.[0];
-    if (approverId) {
-      addNotification({
-        userId: approverId,
-        title: "New Leave Request",
-        message: `${currentUser.name} has applied for ${type} leave.`,
-        type: "info",
-        link: "/dashboard/approvals", // Or link to specific request if we had the ID returned
-      });
+    // Notifications
+    // 1. Notify the Applicant (if apply logic allows applying for self or others, good to confirm)
+    if (targetUserId === currentUser.id) {
+         addNotification({
+            userId: currentUser.id,
+            title: "Application Submitted",
+            message: `Your ${type} leave application has been submitted.`,
+            type: "success",
+            link: "/dashboard/my-applications",
+        });
+    } else {
+        // HR Applied for someone else
+         addNotification({
+            userId: currentUser.id,
+            title: "Application Submitted",
+            message: `Leave application for ${targetUser?.name} submitted successfully.`,
+            type: "success",
+            link: "/dashboard/approvals", // HR view
+        });
+        
+         addNotification({
+            userId: targetUserId,
+            title: "Leave Application Submitted",
+            message: `Values HR has submitted a ${type} leave application on your behalf.`,
+            type: "info",
+            link: "/dashboard/my-applications",
+        });
     }
 
-    // 3. Notify HR
-    const hrUsers = users.filter((u) => u.role === "HR");
-    hrUsers.forEach((hr) => {
-      // Avoid duplicate if HR is also the approver (unlikely but possible)
-      if (hr.id !== approverId) {
-        addNotification({
-          userId: hr.id,
-          title: "New Leave Request",
-          message: `${currentUser.name} has applied for ${type} leave.`,
-          type: "info",
-          link: "/dashboard/approvals",
-        });
-      }
-    });
+    // 2. Notify Approver
+    // If HR applied, does it need approval? 
+    // Usually HR applying implies auto-approval or strictly recorded.
+    // The context `applyLeave` function follows standard flow (starts as Pending for first approver).
+    // So we notify the approver.
+    const approverId = targetUser?.sequentialApprovers?.[0];
+    if (approverId) {
+       addNotification({
+         userId: approverId,
+         title: "New Leave Request",
+         message: `${targetUser?.name} has applied for ${type} leave (via HR).`,
+         type: "info",
+         link: "/dashboard/approvals",
+       });
+    }
+
+    // 3. Notify other HRs (Audit)
+     const hrUsers = users.filter((u) => u.role === "HR");
+     hrUsers.forEach((hr) => {
+       if (hr.id !== currentUser.id && hr.id !== approverId) { // Don't notify self again
+         addNotification({
+           userId: hr.id,
+           title: "New Leave Request",
+           message: `${targetUser?.name} has applied for ${type} leave.`,
+           type: "info",
+           link: "/dashboard/approvals",
+         });
+       }
+     });
 
     onClose();
   };
 
-  const DateInput = ({
-    label,
-    value,
-    onChange,
-    min,
-    required,
-  }: {
-    label: string;
-    value: string;
-    onChange: (val: string) => void;
-    min?: string;
-    required?: boolean;
-  }) => {
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    return (
-      <div className="relative">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
-        <div
-          onClick={() => inputRef.current?.showPicker()}
-          className="relative cursor-pointer"
-        >
-          <input
-            type="text"
-            readOnly
-            value={value ? formatDate(value) : ""}
-            placeholder="DD-MM-YYYY"
-            required={required}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all cursor-pointer bg-white"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-            📅
-          </div>
-          <input
-            ref={inputRef}
-            type="date"
-            required={required}
-            value={value}
-            min={min}
-            onChange={(e) => onChange(e.target.value)}
-            className="absolute inset-0 opacity-0 cursor-pointer pointer-events-none"
-            tabIndex={-1}
-          />
+  const DateInput = ({ label, value, onChange, min, required }: { label: string, value: string, onChange: (val: string) => void, min?: string, required?: boolean }) => {
+      const inputRef = useRef<HTMLInputElement>(null);
+      return (
+        <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+            <div onClick={() => inputRef.current?.showPicker()} className="relative cursor-pointer">
+                <input type="text" readOnly value={value ? formatDate(value) : ""} placeholder="DD-MM-YYYY" required={required} 
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-gray-700"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">📅</div>
+                <input ref={inputRef} type="date" required={required} value={value} min={min} onChange={(e) => onChange(e.target.value)} 
+                    className="absolute inset-0 opacity-0 cursor-pointer pointer-events-none" tabIndex={-1}
+                />
+            </div>
         </div>
-      </div>
-    );
-  };
-
-
+      );
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/30">
-          <div className="flex justify-between items-start">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all scale-100">
+        
+        {/* Header */}
+        <div className="px-8 py-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center sticky top-0 bg-white/80 backdrop-blur-md z-10">
             <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-gray-900">
-                  New Leave Application
-                </h2>
-                {/* Duration Badge */}
-                {type === "Regular" && duration > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-xs font-bold text-indigo-700">
-                    ⏱️{" "}
-                    {(() => {
-                      const totalHours = duration * 8;
-                      const d = Math.floor(totalHours / 8);
-                      const h = Math.round(totalHours % 8);
-                      let text = "";
-                      if (d > 0) text += `${d} Day${d > 1 ? "s" : ""}`;
-                      if (h > 0)
-                        text += `${d > 0 ? " " : ""}${h} Hr${h > 1 ? "s" : ""}`;
-                      return text || "0 Days";
-                    })()}
-                  </span>
-                )}
-              </div>
-              
-              {/* Optional Subtext or just spacing */}
-              {!warning && (
-                 <p className="text-sm text-gray-500 mt-1">Fill in the details below to submit your request.</p>
-              )}
+                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Apply for Leave</h2>
+                <p className="text-sm text-gray-500 mt-1">Submit your leave request for approval.</p>
             </div>
-
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-              type="button"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+            <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-          </div>
-
-          {/* Compact Warning Banner */}
-          {warning && (
-            <div className="mt-3 flex items-center gap-2 text-xs font-medium text-amber-700 bg-amber-50 px-3 py-2 rounded-lg border border-amber-100">
-              <svg className="h-4 w-4 text-amber-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <span>{warning}</span>
-            </div>
-          )}
         </div>
 
-        <div className="p-5">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            
-            {/* Row 1: Type & Category */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Leave Type Toggle */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Leave Type
-                  </label>
-                  <div className="flex space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer p-2.5 border rounded-lg hover:bg-gray-50 flex-1 transition-colors justify-center">
-                      <input
-                        type="radio"
-                        name="type"
-                        checked={type === "Regular"}
-                        onChange={() => {
-                          setType("Regular");
-                          // Reset inputs on switch to defaults
-                          const now = new Date();
-                          const today = now.toISOString().split('T')[0];
-                          setStartDateTime(`${today}T09:00`);
-                          setEndDateTime(`${today}T17:00`);
-                        }}
-                        className="text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <span
-                        className={`font-medium text-sm ${
-                          type === "Regular" ? "text-indigo-700" : "text-gray-600"
-                        }`}
-                      >
-                        Regular (Days)
-                      </span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer p-2.5 border rounded-lg hover:bg-gray-50 flex-1 transition-colors justify-center">
-                      <input
-                        type="radio"
-                        name="type"
-                        checked={type === "Short"}
-                        onChange={() => {
-                          setType("Short");
-                          setShortDate("");
-                          setShortStartTime("");
-                          setShortEndTime("");
-                        }}
-                        className="text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <span
-                        className={`font-medium text-sm ${
-                          type === "Short" ? "text-indigo-700" : "text-gray-600"
-                        }`}
-                      >
-                        Short (Hours)
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Leave Category (Only for Regular) - or Spacer */}
-                {type === "Regular" ? (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Leave Category
-                    </label>
-                    <select
-                      value={nature}
-                      onChange={(e) => setNature(e.target.value as LeaveNature)}
-                      required
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow bg-white"
-                    >
-                      <option value="" disabled>
-                        Select Category
-                      </option>
-                      <option value="Casual">Casual Leave</option>
-                      <option value="Sick">Sick Leave</option>
-                      <option value="Maternity">Maternity Leave</option>
-                      <option value="Pilgrim">Pilgrim Leave</option>
-                      <option value="Unpaid">Unpaid Leave</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                ) : <div className="hidden md:block"></div>}
-            </div>
-
-            {/* Leave Type Description */}
-            <p className="text-xs text-gray-400 -mt-3">
-                {type === "Regular"
-                  ? "Calculated in full days (8 hours)."
-                  : "Calculated in hours only."}
-              </p>
-
-            {/* Row 2: Dates */}
-            <div className="space-y-4">
-              {/* Regular Leave Inputs: DateTime Pickers */}
-              {/* Regular Leave Inputs: Date Pickers (Time Hidden, Defaulted) */}
-              {type === "Regular" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <DateInput
-                          label="Start Date"
-                          required
-                          value={startDateTime.split('T')[0]} 
-                          onChange={(val) => setStartDateTime(`${val}T09:00`)}
-                        />
-                    </div>
-                    <div>
-                        <DateInput
-                          label="End Date"
-                          required
-                          value={endDateTime.split('T')[0]}
-                          min={startDateTime.split('T')[0]}
-                          onChange={(val) => setEndDateTime(`${val}T17:00`)}
-                        />
-                    </div>
-                </div>
-              )}
-
-              {/* Short Leave Inputs (Date + Times) */}
-              {type === "Short" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                     <DateInput
-                        label="Date"
-                        value={shortDate}
-                        onChange={(val) => setShortDate(val)}
-                        required
-                      />
-                     <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Start Time
-                        </label>
-                        <input
-                          type="time"
-                          required
-                          value={shortStartTime}
-                          onChange={(e) => setShortStartTime(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          End Time
-                        </label>
-                        <input
-                          type="time"
-                          required
-                          value={shortEndTime}
-                          onChange={(e) => setShortEndTime(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                        />
-                      </div>
-                    </div>
-                </div>
-              )}
-            </div>
-
-            {/* Row 3: Reason & Attachments */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Reason */}
-                <div className="flex flex-col">
-                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Reason
-                      </label>
-                      <textarea
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow resize-none flex-grow"
-                        rows={3} // Reduced rows
-                        placeholder="Please briefly explain the reason for your leave..."
-                      />
-                </div>
+        <div className="p-8 space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
                 
-                {/* File Upload - Compact Grid */}
-                <div>
-                     <div className="flex justify-between items-center mb-1.5">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Attachments (Optional)
-                        </label>
-                        <span className="text-xs text-gray-400">
-                          Max 5 files
-                        </span>
-                     </div>
-                     
-                     <div className="border border-dashed border-gray-300 rounded-lg p-3 bg-gray-50 min-h-[100px] relative">
-                         <div className="flex flex-wrap gap-3 relative z-10">
-                            {/* Existing Files */}
-                            {selectedFiles.map((file, idx) => (
-                              <div
-                                key={idx}
-                                className="relative w-16 h-16 bg-white border border-gray-200 rounded-lg flex flex-col items-center justify-center group overflow-hidden shadow-sm"
-                                title={file.name}
-                              >
-                                <span className="text-2xl">📄</span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); removeFile(idx)}}
-                                  className="absolute top-0.5 right-0.5 bg-red-100 text-red-500 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  ✕
-                                </button>
-                                <span className="text-[9px] text-gray-500 w-full px-1 text-center truncate absolute bottom-1">
-                                  {(file.size / 1024).toFixed(0)}KB
-                                </span>
-                              </div>
+                {/* HR Only: Employee Selection */}
+                {isHR && (
+                    <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 animate-in fade-in slide-in-from-top-2">
+                        <label className="block text-sm font-bold text-indigo-900 mb-2">Select Employee (HR Mode)</label>
+                        <select 
+                            value={selectedEmployeeId} 
+                            onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-gray-700 font-medium"
+                        >
+                            <option value="">-- Select Employee --</option>
+                            {users.map(u => (
+                                <option key={u.id} value={u.id}>
+                                    {u.name} {u.employeeCode ? `(${u.employeeCode})` : ""} - {u.designation}
+                                </option>
                             ))}
+                        </select>
+                        <p className="text-xs text-indigo-600 mt-2 flex items-center gap-1">
+                            ℹ️ You are applying on behalf of this employee.
+                        </p>
+                    </div>
+                )}
+                
+                {/* Leave Type Selection */}
+                <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-900">Leave Type</label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <label className={`
+                            relative flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
+                            ${type === "Regular" ? "border-indigo-600 bg-indigo-50/50" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"}
+                        `}>
+                            <input type="radio" name="type" className="sr-only" checked={type === "Regular"} onChange={() => {
+                                setType("Regular");
+                                // Defaults
+                                setStartDate(new Date().toISOString().split('T')[0]);
+                                setEndDate(new Date().toISOString().split('T')[0]);
+                            }} />
+                            <span className={`text-lg mb-1 ${type === "Regular" ? "text-indigo-700" : "text-gray-500"}`}>🗓️</span>
+                            <span className={`font-semibold ${type === "Regular" ? "text-indigo-900" : "text-gray-700"}`}>Regular Leave</span>
+                        </label>
 
-                            {/* Add Button Logic within Grid */}
-                            {selectedFiles.length < 5 && (
-                              <div className="relative w-16 h-16 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer text-gray-400 hover:text-indigo-500">
-                                   <span className="text-xl">+</span>
-                                    <input
-                                      type="file"
-                                      multiple
-                                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                      onChange={handleFileChange}
-                                      accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-                                    />
-                              </div>
-                            )}
-                         </div>
-
-                         {/* Fallback Text if Empty */}
-                         {selectedFiles.length === 0 && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"> 
-                                <p className="text-xs text-gray-400">Drag & drop or Click +</p>
-                            </div>
-                         )}
-                     </div>
-                     {fileError && <p className="text-red-500 text-xs mt-1">{fileError}</p>}
+                        <label className={`
+                            relative flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
+                            ${type === "Short" ? "border-indigo-600 bg-indigo-50/50" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"}
+                        `}>
+                            <input type="radio" name="type" className="sr-only" checked={type === "Short"} onChange={() => {
+                                setType("Short");
+                            }} />
+                            <span className={`text-lg mb-1 ${type === "Short" ? "text-indigo-700" : "text-gray-500"}`}>⏱️</span>
+                            <span className={`font-semibold ${type === "Short" ? "text-indigo-900" : "text-gray-700"}`}>Short Leave</span>
+                        </label>
+                    </div>
                 </div>
-             </div>
 
-            {/* Warning Message */}
+                {/* Conditional Inputs */}
+                {/* Conditional Inputs */}
+                <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                    
+                    {type === "Regular" ? (
+                        <>
+                             {/* Category */}
+                             <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-2">Leave Category</label>
+                                <select value={nature} onChange={(e) => setNature(e.target.value as LeaveNature)} required
+                                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all appearance-none"
+                                >
+                                    <option value="Casual">Casual Leave (Paid)</option>
+                                    <option value="Sick">Sick Leave (Paid)</option>
+                                    <option value="Maternity">Maternity Leave</option>
+                                    <option value="Pilgrim">Pilgrim Leave</option>
+                                    <option value="Unpaid">Unpaid Leave</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                             </div>
 
+                             {/* Dates */}
+                             <div className="grid grid-cols-2 gap-6">
+                                <DateInput label="Start Date" value={startDate} onChange={setStartDate} required />
+                                <DateInput label="End Date" value={endDate} onChange={setEndDate} min={startDate} required />
+                             </div>
 
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors border border-gray-200 rounded-lg hover:bg-gray-50 bg-white"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
-              >
-                Submit Application
-              </button>
-            </div>
-          </form>
+                             {/* Duration Warning/Info */}
+                             <div className={`p-4 rounded-xl border ${duration > 0 ? "bg-blue-50 border-blue-100" : "bg-gray-50 border-gray-100"}`}>
+                                 <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-gray-600">Total Duration</span>
+                                    <span className="text-lg font-bold text-gray-900">{duration} Days</span>
+                                 </div>
+                                 <p className="text-xs text-gray-500 mt-1">Weekends (Fri-Sat) are excluded.</p>
+                                 {warning && <p className="text-xs font-semibold text-amber-600 mt-2">⚠️ {warning}</p>}
+                             </div>
+                        </>
+                    ) : (
+                        <>
+                             {/* Short Leave Inputs */}
+                             <DateInput label="Date" value={shortDate} onChange={setShortDate} required />
+                             
+                             <div className="grid grid-cols-2 gap-6">
+                                 <div>
+                                    <label className="block text-sm font-semibold text-gray-900 mb-2">Start Time</label>
+                                    <input type="time" value={shortStartTime} onChange={(e) => setShortStartTime(e.target.value)} required 
+                                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    />
+                                 </div>
+                                 <div>
+                                    <label className="block text-sm font-semibold text-gray-900 mb-2">End Time</label>
+                                    <input type="time" value={shortEndTime} onChange={(e) => setShortEndTime(e.target.value)} required 
+                                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    />
+                                 </div>
+                             </div>
+                             
+                             <div className={`p-4 rounded-xl border ${duration > 0 ? "bg-indigo-50 border-indigo-100" : "bg-gray-50 border-gray-100"}`}>
+                                 <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-gray-600">Total Hours</span>
+                                    <span className="text-lg font-bold text-gray-900">{duration} Hrs</span>
+                                 </div>
+                                 <p className="text-xs text-indigo-600 font-medium mt-1">Marked as Short Leave (Casual if balanced)</p>
+                             </div>
+                        </>
+                    )}
+                </div>
+
+                {/* Reason */}
+                <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Reason</label>
+                    <textarea value={reason} onChange={(e) => setReason(e.target.value)} required rows={3}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+                        placeholder="Please explain the reason..."
+                    />
+                </div>
+
+                {/* File Upload */}
+                <div>
+                   <label className="block text-sm font-semibold text-gray-900 mb-2">Attachments <span className="font-normal text-gray-400">(Max 5)</span></label>
+                   <div className="grid grid-cols-5 gap-3">
+                       {selectedFiles.map((file, idx) => (
+                          <div key={idx} className="relative group aspect-square bg-gray-50 border border-gray-200 rounded-lg flex flex-col items-center justify-center p-2 text-center">
+                              <span className="text-2xl mb-1">📄</span>
+                              <span className="text-[10px] text-gray-500 w-full truncate">{file.name}</span>
+                              <button type="button" onClick={() => removeFile(idx)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                          </div>
+                       ))}
+                       {selectedFiles.length < 5 && (
+                           <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-gray-50 transition-all text-gray-400 hover:text-indigo-500">
+                               <span className="text-2xl">+</span>
+                               <input type="file" multiple className="hidden" onChange={handleFileChange} accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" />
+                           </label>
+                       )}
+                   </div>
+                   {fileError && <p className="text-xs text-red-500 mt-2">{fileError}</p>}
+                </div>
+
+                {/* Actions */}
+                <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:static md:bg-transparent md:border-0 md:p-0 flex justify-end gap-3 z-20">
+                    <button type="button" onClick={onClose} className="px-6 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" className="px-6 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95">
+                        Submit Application
+                    </button>
+                </div>
+
+            </form>
         </div>
       </div>
     </div>

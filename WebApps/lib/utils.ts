@@ -1,3 +1,14 @@
+// Configuration Defaults
+export const LEAVE_CONFIG = {
+    // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    WEEKENDS: [6, 0],
+};
+
+export const isWeekend = (date: Date): boolean => {
+    const day = date.getDay();
+    return LEAVE_CONFIG.WEEKENDS.includes(day);
+};
+
 export const formatDate = (dateInput: string | Date | undefined | null): string => {
     if (!dateInput) return "";
     const date = new Date(dateInput);

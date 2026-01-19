@@ -140,7 +140,9 @@ export default function Header() {
                     <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-20 overflow-hidden ring-1 ring-black ring-opacity-5">
                          <div className="px-4 py-3 border-b border-gray-50 md:hidden">
                             <p className="text-sm font-medium text-gray-900">{currentUser?.name}</p>
-                            <p className="text-xs text-gray-500">{currentUser?.designation}</p>
+                            <p className="text-xs text-gray-500">
+                                {currentUser?.designation} {currentUser?.employeeCode ? `(${currentUser.employeeCode})` : ""}
+                            </p>
                          </div>
                          <button 
                             onClick={handleLogout}

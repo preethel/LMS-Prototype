@@ -65,7 +65,9 @@ export default function LoginPage() {
         <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
           {user.name}
         </h3>
-        <p className="text-sm text-gray-500">{user.designation}</p>
+        <p className="text-sm text-gray-500">
+            {user.designation} {user.employeeCode ? `(${user.employeeCode})` : ""}
+        </p>
       </div>
       <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600">
         →
