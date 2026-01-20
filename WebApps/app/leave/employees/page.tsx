@@ -5,6 +5,7 @@ import { User } from "@/lib/types";
 import { useState } from "react";
 
 import HolidayManager from "@/components/Dashboard/HolidayManager";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export default function EmployeeManagementPage() {
   const { users, currentUser, updateUserApprovers } = useLMS();
@@ -155,20 +156,19 @@ export default function EmployeeManagementPage() {
             <div className="mb-6 space-y-4">
               {/* Add Approver */}
               <div className="flex gap-2">
-                <select
+                <div className="flex-1">
+                 <SearchableSelect
                   value={availableApproverId}
-                  onChange={(e) => setAvailableApproverId(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
-                >
-                  <option value="">Select Approver</option>
-                  {users
+                  onChange={(val) => setAvailableApproverId(val)}
+                  options={users
                     .filter((u) => u.id !== selectedUser.id) // Cant approve self
-                    .map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name} ({u.role})
-                      </option>
-                    ))}
-                </select>
+                    .map((u) => ({
+                        value: u.id,
+                        label: `${u.name} (${u.role})`
+                    }))}
+                  placeholder="Select Approver"
+                />
+                </div>
                 <button
                   onClick={handleAddApprover}
                   disabled={!availableApproverId}

@@ -1,6 +1,8 @@
 "use client";
 
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { useLMS } from "@/context/LMSContext";
+import { DelegationHistory } from "@/lib/types";
 import { formatDateTime } from "@/lib/utils";
 import { Ban, Check, Clock, Edit2, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
@@ -173,19 +175,15 @@ export default function DelegationPage() {
                             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                                 Delegate To
                             </label>
-                            <select
+                            <SearchableSelect
                                 value={selectedDelegate}
-                                onChange={(e) => setSelectedDelegate(e.target.value)}
-                                required
-                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm"
-                            >
-                                <option value="">-- Select Employee --</option>
-                                {potentialDelegates.map((u) => (
-                                <option key={u.id} value={u.id}>
-                                    {u.name}
-                                </option>
-                                ))}
-                            </select>
+                                onChange={(val) => setSelectedDelegate(val)}
+                                options={potentialDelegates.map(u => ({
+                                    value: u.id,
+                                    label: u.name
+                                }))}
+                                placeholder="Select Delegate..."
+                            />
                         </div>
 
                         <div className="space-y-3">

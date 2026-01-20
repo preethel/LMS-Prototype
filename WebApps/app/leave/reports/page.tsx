@@ -1,5 +1,6 @@
 "use client";
 
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { useLMS } from "@/context/LMSContext";
 import { formatDate, formatDuration } from "@/lib/utils";
 import { useMemo, useState } from "react";
@@ -208,18 +209,15 @@ export default function ReportsPage() {
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
               Employee
             </label>
-            <select
+            <SearchableSelect
               value={selectedEmployee}
-              onChange={(e) => setSelectedEmployee(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-            >
-              <option value="All">All Employees</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedEmployee(val)}
+              options={[
+                  { value: "All", label: "All Employees" },
+                  ...users.map((u) => ({ value: u.id, label: u.name }))
+              ]}
+              placeholder="Select Employee..."
+            />
           </div>
 
           {/* Type Select */}

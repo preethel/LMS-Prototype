@@ -1,3 +1,4 @@
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { useLMS } from "@/context/LMSContext";
 import { useNotification } from "@/context/NotificationContext";
 import { LeaveNature, LeaveType } from "@/lib/types";
@@ -274,18 +275,16 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
                 {isHR && (
                     <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 animate-in fade-in slide-in-from-top-2">
                         <label className="block text-sm font-bold text-indigo-900 mb-2">Select Employee (HR Mode)</label>
-                        <select 
-                            value={selectedEmployeeId} 
-                            onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                            className="w-full px-4 py-3 bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-gray-700 font-medium"
-                        >
-                            <option value="">-- Select Employee --</option>
-                            {users.map(u => (
-                                <option key={u.id} value={u.id}>
-                                    {u.name} {u.employeeCode ? `(${u.employeeCode})` : ""} - {u.designation}
-                                </option>
-                            ))}
-                        </select>
+                        <SearchableSelect
+                            value={selectedEmployeeId}
+                            onChange={(val) => setSelectedEmployeeId(val)}
+                            options={users.map(u => ({
+                                value: u.id,
+                                label: `${u.name} ${u.employeeCode ? `(${u.employeeCode})` : ""} - ${u.designation}`
+                            }))}
+                            placeholder="Type to search employee..."
+                            className="mb-1"
+                        />
                         <p className="text-xs text-indigo-600 mt-2 flex items-center gap-1">
                             ℹ️ You are applying on behalf of this employee.
                         </p>
