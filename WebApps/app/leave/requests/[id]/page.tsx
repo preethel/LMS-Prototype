@@ -532,10 +532,10 @@ export default function LeaveRequestDetails({
                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Available Balance</p>
                          <div className="flex items-center justify-end gap-2 text-xs font-bold text-gray-700">
                              <span className="bg-green-50 text-green-700 px-1.5 py-0.5 rounded border border-green-100" title="Casual Leave">
-                                C: {(requesterBalance.casualQuota || 0) - (requesterBalance.casualUsed || 0)}
+                                Casual: {(requesterBalance.casualQuota || 0) - (requesterBalance.casualUsed || 0)}
                              </span>
                              <span className="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded border border-purple-100" title="Sick Leave">
-                                S: {(requesterBalance.sickQuota || 0) - (requesterBalance.sickUsed || 0)}
+                                Sick: {(requesterBalance.sickQuota || 0) - (requesterBalance.sickUsed || 0)}
                              </span>
                          </div>
                      </div>
@@ -654,7 +654,7 @@ export default function LeaveRequestDetails({
                  {/* Unpaid Days - Admin Only */}
                  {isFinalAuthority && (
                    <div className="mb-4 flex items-center gap-3">
-                      <label className="text-xs font-bold text-gray-500 uppercase">Unpaid / LWP:</label>
+                      <label className="text-xs font-bold text-gray-500 uppercase">Unpaid:</label>
                       <div className="flex items-center gap-1">
                         <input
                            type="number"
@@ -664,7 +664,7 @@ export default function LeaveRequestDetails({
                            onChange={(e) => updateUnpaidLeaveDays(request.id, Number(e.target.value))}
                            className="w-16 text-center px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none"
                         />
-                        <span className="text-xs text-gray-400">/ {formatDuration(request.daysCalculated)} Days</span>
+                        <span className="text-xs text-gray-400">/ {formatDuration(request.daysCalculated)} {request.type === "Short" ? "Hours" : "Days"}</span>
                       </div>
                    </div>
                  )}

@@ -356,7 +356,7 @@ function ApplyLeaveContent({ onClose }: { onClose: () => void }) {
                                     <span className="text-sm font-medium text-gray-600">Total Duration</span>
                                     <span className="text-lg font-bold text-gray-900">{duration} Days</span>
                                  </div>
-                                 <p className="text-xs text-gray-500 mt-1">Weekends (Fri-Sat) are excluded.</p>
+                                 <p className="text-xs text-gray-500 mt-1">Weekends (Sat-Sun) are excluded.</p>
                                  {warning && <p className="text-xs font-semibold text-amber-600 mt-2">⚠️ {warning}</p>}
                              </div>
                         </>
